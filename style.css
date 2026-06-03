@@ -287,6 +287,56 @@ header p {
 }
 
 
+/* ---- LSU Mini Game ---- */
+
+.lsu-game-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  margin: 28px auto 0;
+}
+
+.lsu-game-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.lsu-game-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(253, 208, 35, 0.7);
+}
+
+.lsu-game-scores {
+  display: flex;
+  gap: 18px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 1px;
+}
+
+.lsu-game-scores strong {
+  color: #fdd023;
+}
+
+#lsuGameCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(253, 208, 35, 0.25);
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
 /* Thin gold divider line between hero and legends */
 .lsu-divider {
   width: 220px;

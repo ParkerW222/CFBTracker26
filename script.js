@@ -516,6 +516,282 @@ function populateLSULegends() {
   `).join("");
 }
 
+// ================================
+// LSU MINI GAME
+// Endless runner: click to jump the
+// LSU RB over Ole Miss defenders.
+// Highscore persists in localStorage.
+// ================================
+
+const LSU_GAME = (() => {
+  const W = 560, H = 150, GROUND = 112;
+  const RB_X = 80, RB_W = 26, RB_H = 52;
+  const DEF_W = 28, DEF_H = 58;
+  const GRAVITY = 0.65, JUMP_VY = -13;
+
+  let canvas, ctx, animId = null;
+  let state = "idle"; // idle | running | dead
+  let ry, rvy, grounded;
+  let defenders, nextSpawn, speed, tick, score;
+  let best = 0;
+  let ready = false;
+
+  function setup() {
+    canvas = document.getElementById("lsuGameCanvas");
+    if (!canvas) return;
+    ctx = canvas.getContext("2d");
+    if (!ready) {
+      canvas.addEventListener("click", onClick);
+      canvas.addEventListener("touchstart", e => { e.preventDefault(); onClick(); }, { passive: false });
+      ready = true;
+    }
+    best = parseInt(localStorage.getItem("lsuMiniGameBest") || "0", 10);
+    state = "idle";
+    setHUD(0, best);
+    renderIdle();
+  }
+
+  function onClick() {
+    if (state === "idle" || state === "dead") { startGame(); return; }
+    if (grounded) { rvy = JUMP_VY; grounded = false; }
+  }
+
+  function startGame() {
+    ry = GROUND - RB_H; rvy = 0; grounded = true;
+    defenders = []; nextSpawn = 90; speed = 3; tick = 0; score = 0;
+    state = "running";
+    cancelAnimationFrame(animId);
+    animId = requestAnimationFrame(step);
+  }
+
+  function step() {
+    if (state !== "running") return;
+    tick++;
+    score = Math.floor(tick / 6);
+    speed = 3 + score * 0.008;
+
+    // Physics
+    rvy += GRAVITY;
+    ry  += rvy;
+    if (ry >= GROUND - RB_H) { ry = GROUND - RB_H; rvy = 0; grounded = true; }
+
+    // Spawn defenders
+    if (--nextSpawn <= 0) {
+      defenders.push({ x: W + 10 });
+      nextSpawn = Math.max(55, 95 - score * 0.25) + Math.random() * 50;
+    }
+    defenders.forEach(d => d.x -= speed);
+    defenders = defenders.filter(d => d.x > -DEF_W - 10);
+
+    // Collision (shrunk hitbox for fairness)
+    const rx = RB_X + 5, rw = RB_W - 10, rhh = RB_H - 10;
+    for (const d of defenders) {
+      const dy = GROUND - DEF_H;
+      if (rx + rw > d.x + 5 && rx < d.x + DEF_W - 5 && ry + 8 + rhh > dy + 6 && ry + 8 < dy + DEF_H - 4) {
+        gameOver(); return;
+      }
+    }
+
+    setHUD(score, best);
+    render();
+    animId = requestAnimationFrame(step);
+  }
+
+  function gameOver() {
+    state = "dead";
+    cancelAnimationFrame(animId);
+    if (score > best) { best = score; localStorage.setItem("lsuMiniGameBest", best); }
+    setHUD(score, best);
+    render();
+    // Overlay
+    ctx.fillStyle = "rgba(0,0,0,0.58)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center";
+    ctx.font = "bold 22px 'Oswald', sans-serif";
+    ctx.fillStyle = "#e8374d";
+    ctx.fillText("TACKLED!", W / 2, H / 2 - 10);
+    ctx.font = "bold 13px 'Oswald', sans-serif";
+    ctx.fillStyle = "#fdd023";
+    ctx.fillText(score + " YDS  ·  BEST: " + best + " YDS", W / 2, H / 2 + 12);
+    ctx.font = "11px 'Inter', sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText("Click to run again", W / 2, H / 2 + 30);
+  }
+
+  function renderIdle() {
+    if (!ctx) return;
+    tick = 0; ry = GROUND - RB_H; defenders = [{ x: 360 }];
+    render();
+    ctx.fillStyle = "rgba(0,0,0,0.52)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = "center";
+    ctx.font = "bold 16px 'Oswald', sans-serif";
+    ctx.fillStyle = "#fdd023";
+    ctx.fillText("CLICK TO RUN!", W / 2, H / 2 - 4);
+    ctx.font = "11px 'Inter', sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText("Click or tap to jump", W / 2, H / 2 + 14);
+  }
+
+  // ---- Drawing ----
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+    drawField();
+    defenders.forEach(drawDefender);
+    drawRunner();
+  }
+
+  function drawField() {
+    // Night sky
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
+    sky.addColorStop(0, "#06001a");
+    sky.addColorStop(1, "#130030");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, GROUND);
+    // Turf
+    ctx.fillStyle = "#0b3010";
+    ctx.fillRect(0, GROUND, W, H - GROUND);
+    // Ground stripe
+    ctx.fillStyle = "#165a20";
+    ctx.fillRect(0, GROUND, W, 3);
+    // Scrolling yard lines
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1.5;
+    const off = (tick * speed) % 90;
+    for (let x = W - off; x > -90; x -= 90) {
+      ctx.beginPath(); ctx.moveTo(x, GROUND + 2); ctx.lineTo(x, H); ctx.stroke();
+    }
+  }
+
+  function drawRunner() {
+    const x = RB_X, y = ry;
+    const stride = Math.floor(tick / 5) % 2;
+
+    // Shadow
+    shadow(x + RB_W / 2, 13);
+
+    // Gold pants + animated legs
+    ctx.fillStyle = "#fdd023";
+    if (grounded) {
+      ctx.fillRect(x + 2,  y + RB_H - 20, 10, 20);
+      ctx.fillRect(x + 14, y + RB_H - (stride ? 20 : 14), 10, stride ? 20 : 14);
+    } else {
+      ctx.fillRect(x + 2,  y + RB_H - 16, 10, 14); // tuck
+      ctx.fillRect(x + 14, y + RB_H - 20, 10, 18);
+    }
+
+    // Purple jersey
+    ctx.fillStyle = "#4b0082";
+    ctx.fillRect(x + 1, y + 16, RB_W - 2, 30);
+    // Jersey number
+    ctx.fillStyle = "#fdd023";
+    ctx.font = "bold 11px 'Oswald', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("7", x + RB_W / 2, y + 34);
+
+    // Gold helmet dome
+    ctx.fillStyle = "#fdd023";
+    ctx.beginPath();
+    ctx.arc(x + RB_W / 2, y + 9, 11, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(x + 2, y + 8, RB_W - 4, 9);
+    // Purple stripe
+    ctx.fillStyle = "#4b0082";
+    ctx.fillRect(x + RB_W / 2 - 2, y, 4, 18);
+    // Facemask (faces right)
+    ctx.strokeStyle = "rgba(210,210,210,0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x + RB_W - 4, y + 10);
+    ctx.lineTo(x + RB_W + 3, y + 15);
+    ctx.lineTo(x + RB_W + 3, y + 21);
+    ctx.stroke();
+
+    // Football tucked under arm
+    ctx.fillStyle = "#6b3010";
+    ctx.beginPath();
+    ctx.ellipse(x + RB_W + 7, y + 26, 9, 5, -0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x + RB_W + 1, y + 25);
+    ctx.lineTo(x + RB_W + 12, y + 27);
+    ctx.stroke();
+  }
+
+  function drawDefender(d) {
+    const x = d.x, y = GROUND - DEF_H;
+
+    // Shadow
+    shadow(x + DEF_W / 2, 13);
+
+    // Silver pants + legs
+    ctx.fillStyle = "#8a8a9a";
+    ctx.fillRect(x + 3,  y + DEF_H - 20, 9, 20);
+    ctx.fillRect(x + 16, y + DEF_H - 20, 9, 20);
+
+    // Ole Miss red jersey
+    ctx.fillStyle = "#cc0001";
+    ctx.fillRect(x, y + 16, DEF_W, 32);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px 'Oswald', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("OM", x + DEF_W / 2, y + 35);
+
+    // Arms raised (blocking)
+    ctx.fillStyle = "#cc0001";
+    ctx.fillRect(x - 8, y + 14, 9, 22);
+    ctx.fillRect(x + DEF_W - 1, y + 14, 9, 22);
+    // Hands
+    ctx.fillStyle = "#c8956a";
+    ctx.beginPath(); ctx.arc(x - 4, y + 12, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + DEF_W + 3, y + 12, 5, 0, Math.PI * 2); ctx.fill();
+
+    // Navy helmet dome
+    ctx.fillStyle = "#00205b";
+    ctx.beginPath();
+    ctx.arc(x + DEF_W / 2, y + 9, 12, Math.PI, 0);
+    ctx.fill();
+    ctx.fillRect(x + 2, y + 8, DEF_W - 4, 9);
+    // Red helmet stripe
+    ctx.fillStyle = "#cc0001";
+    ctx.fillRect(x + DEF_W / 2 - 2, y, 4, 18);
+    // Facemask (faces left — toward runner)
+    ctx.strokeStyle = "rgba(210,210,210,0.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + 10);
+    ctx.lineTo(x - 3, y + 15);
+    ctx.lineTo(x - 3, y + 21);
+    ctx.stroke();
+  }
+
+  function shadow(cx, rx) {
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(cx, GROUND + 4, rx, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function setHUD(s, b) {
+    const se = document.getElementById("lsuGameScore");
+    const be = document.getElementById("lsuGameBest");
+    if (se) se.textContent = s;
+    if (be) be.textContent = b;
+  }
+
+  function stop() {
+    cancelAnimationFrame(animId);
+    animId = null;
+    state = "idle";
+  }
+
+  return { setup, stop };
+})();
+
+
 function enterLSUMode() {
   if (document.body.classList.contains("lsu-mode")) return;
   document.body.classList.add("lsu-mode");
@@ -524,12 +800,14 @@ function enterLSUMode() {
   const lsuInfo = teamMap["LSU"] || {};
   document.getElementById("lsuHeroLogo").src = lsuInfo.darkLogo || lsuInfo.logo || "";
   populateLSULegends();
+  LSU_GAME.setup();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function exitLSUMode() {
   document.body.classList.remove("lsu-mode");
   document.getElementById("lsuHero").style.display = "none";
+  LSU_GAME.stop();
 }
 
 function exitLSUModeBtn() {
