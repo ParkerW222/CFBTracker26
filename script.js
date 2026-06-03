@@ -19,6 +19,18 @@ let draftExits    = {};  // keyed by college team name
 let portalExits   = {};  // keyed by origin school name
 let portalIncoming = {}; // players arriving: { "LSU": [ portal entry, ... ] }
 
+// Manual roster corrections for players whose 2026 status isn't yet in the API.
+// MANUAL_EXITS forces a player off a team's displayed roster.
+// MANUAL_INCOMING adds a player if they aren't already present (safe to leave even if API catches up).
+const MANUAL_EXITS = {
+  "Vanderbilt": ["Diego Pavia"]
+};
+const MANUAL_INCOMING = {
+  "Vanderbilt": [
+    { firstName: "Jared", lastName: "Curtis", position: "QB", stars: 0, origin: "Transfer" }
+  ]
+};
+
 
 // ================================
 // LOAD GAMES FROM API
@@ -1261,6 +1273,27 @@ async function fetchRoster(team) {
       origin:     entry.origin || ""
     }));
     data = [...data, ...transferPlayers];
+  }
+
+  // Apply manual exits (players known to be gone but not yet in API data)
+  const manualOut = (MANUAL_EXITS[team] || []).map(n => n.toLowerCase().trim());
+  if (manualOut.length) {
+    data = data.filter(p => !manualOut.includes(`${p.firstName} ${p.lastName}`.toLowerCase().trim()));
+  }
+
+  // Apply manual incoming (deduplicated — safe if API already has them)
+  const manualIn = MANUAL_INCOMING[team] || [];
+  if (manualIn.length) {
+    const existing = new Set(data.map(p => `${p.firstName} ${p.lastName}`.toLowerCase().trim()));
+    const toAdd = manualIn
+      .filter(e => !existing.has(`${e.firstName} ${e.lastName}`.toLowerCase().trim()))
+      .map(e => ({
+        firstName: e.firstName, lastName: e.lastName, position: e.position,
+        jersey: null, height: null, weight: null, year: null,
+        homeCity: null, homeState: null,
+        isTransfer: true, stars: e.stars || 0, origin: e.origin || ""
+      }));
+    data = [...data, ...toAdd];
   }
 
   rosterCache[team] = data;
