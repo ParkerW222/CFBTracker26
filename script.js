@@ -20,15 +20,49 @@ let portalExits   = {};  // keyed by origin school name
 let portalIncoming = {}; // players arriving: { "LSU": [ portal entry, ... ] }
 
 // Manual roster corrections for players whose 2026 status isn't yet in the API.
-// MANUAL_EXITS forces a player off a team's displayed roster.
-// MANUAL_INCOMING adds a player if they aren't already present (safe to leave even if API catches up).
+// MANUAL_EXITS:    forces a player off a team's displayed roster (exhausted eligibility,
+//                 UDFA sign, or transfer safety-net for cases the portal API may miss).
+// MANUAL_INCOMING: adds a player only if not already present — safe to leave here even
+//                 if the CFBD portal API eventually includes them (deduplication runs first).
 const MANUAL_EXITS = {
-  "Vanderbilt": ["Diego Pavia"]
+  // ---- Exhausted eligibility / UDFA — not in NFL Draft OR portal data ----
+  "Vanderbilt":     ["Diego Pavia"],        // signed w/ Packers as UDFA
+  "LSU":            ["Garrett Nussmeier"],  // signed w/ Chiefs as UDFA
+  "Tennessee":      ["Joey Aguilar"],       // eligibility extension denied; signed w/ Jaguars
+  "Ohio State":     ["Will Howard"],        // signed w/ Steelers as UDFA
+  "Illinois":       ["Luke Altmyer"],       // exhausted eligibility
+
+  // ---- Transfer safety-nets (also captured by portal API, but belt-and-suspenders) ----
+  "Nebraska":       ["Dylan Raiola"],       // transferred to Oregon
+  "Michigan State": ["Aidan Chiles"],       // transferred to Northwestern
+  "Iowa State":     ["Rocco Becht"],        // transferred to Penn State (followed Matt Campbell)
+  "Florida":        ["DJ Lagway"],          // transferred to Baylor
 };
+
 const MANUAL_INCOMING = {
-  "Vanderbilt": [
-    { firstName: "Jared", lastName: "Curtis", position: "QB", stars: 0, origin: "Transfer" }
-  ]
+  // ---- True freshman (not in portal OR 2025 roster — must be added manually) ----
+  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, origin: "HS (Georgia)" }],
+  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, origin: "HS (Georgia)" }],
+
+  // ---- Transfer QB additions (deduplication prevents doubles if API already has them) ----
+  "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State"  }],
+  "Tennessee":      [{ firstName: "Ryan",    lastName: "Staub",      position: "QB", stars: 0, origin: "Colorado"       }],
+  "Auburn":         [{ firstName: "Byrum",   lastName: "Brown",      position: "QB", stars: 0, origin: "South Florida"  }],
+  "Florida":        [{ firstName: "Aaron",   lastName: "Philo",      position: "QB", stars: 0, origin: "Georgia Tech"   }],
+  "Baylor":         [{ firstName: "DJ",      lastName: "Lagway",     position: "QB", stars: 0, origin: "Florida"        }],
+  "Nebraska":       [{ firstName: "Anthony", lastName: "Colandrea",  position: "QB", stars: 0, origin: "UNLV"           }],
+  "Oregon":         [{ firstName: "Dylan",   lastName: "Raiola",     position: "QB", stars: 5, origin: "Nebraska"       }],
+  "Northwestern":   [{ firstName: "Aidan",   lastName: "Chiles",     position: "QB", stars: 0, origin: "Michigan State" }],
+  "Penn State":     [{ firstName: "Rocco",   lastName: "Becht",      position: "QB", stars: 0, origin: "Iowa State"     }],
+  "Iowa State":     [{ firstName: "Jaylen",  lastName: "Raynor",     position: "QB", stars: 0, origin: "Arkansas State" }],
+  "Illinois":       [{ firstName: "Katin",   lastName: "Houser",     position: "QB", stars: 0, origin: "East Carolina"  }],
+  "Indiana":        [{ firstName: "Josh",    lastName: "Hoover",     position: "QB", stars: 0, origin: "TCU"            }],
+  "Rutgers":        [{ firstName: "Dylan",   lastName: "Lonergan",   position: "QB", stars: 0, origin: "Boston College" }],
+  "Wisconsin":      [{ firstName: "Colton",  lastName: "Joseph",     position: "QB", stars: 0, origin: "Old Dominion"   }],
+  "Florida State":  [{ firstName: "Ashton",  lastName: "Daniels",    position: "QB", stars: 0, origin: "Auburn"         }],
+  "Miami":          [{ firstName: "Darian",  lastName: "Mensah",     position: "QB", stars: 0, origin: "Duke"           }],
+  "Oklahoma State": [{ firstName: "Drew",    lastName: "Mestemaker", position: "QB", stars: 0, origin: "North Texas"    }],
+  "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri"       }],
 };
 
 
