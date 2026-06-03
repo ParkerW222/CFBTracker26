@@ -300,6 +300,7 @@ async function loadGames() {
         : "TBD";
 
       return {
+        gameId:      game.id,
         week:        String(game.week),
         home:        game.homeTeam,
         away:        game.awayTeam,
@@ -344,6 +345,44 @@ async function loadGames() {
 let liveInterval  = null;
 let liveIntervalMs = 90_000;
 
+// Parses /games/players response into { home: { passing, rushing, receiving }, away: {...} }
+// Each category entry: { name, stats: { YDS, TD, ... } }
+function parseLivePlayerStats(data, homeTeam, awayTeam) {
+  if (!Array.isArray(data) || !data[0]?.teams) return null;
+  const result = {};
+
+  data[0].teams.forEach(team => {
+    const key = team.school === homeTeam ? "home" : team.school === awayTeam ? "away" : null;
+    if (!key) return;
+    result[key] = {};
+
+    (team.categories || []).forEach(cat => {
+      const catName = (cat.name || "").toLowerCase();
+      if (!["passing", "rushing", "receiving"].includes(catName)) return;
+
+      // Build athlete → stat map
+      const players = {};
+      (cat.types || []).forEach(type => {
+        (type.athletes || []).forEach(a => {
+          if (!players[a.name]) players[a.name] = {};
+          players[a.name][type.name] = a.stat;
+        });
+      });
+
+      // Pick the leader by yards
+      let leader = null, topYds = -1;
+      Object.entries(players).forEach(([name, stats]) => {
+        const yds = parseInt(stats["YDS"] || "0", 10);
+        if (yds > topYds) { topYds = yds; leader = { name, stats }; }
+      });
+      if (leader) result[key][catName] = leader;
+    });
+  });
+
+  return Object.keys(result).length ? result : null;
+}
+
+
 async function fetchLiveScores() {
   if (allGames.length === 0) return false;
   const headers = { "Authorization": `Bearer ${API_KEY}` };
@@ -369,6 +408,7 @@ async function fetchLiveScores() {
 
         if (sg.status === "in_progress") {
           match.isLive          = true;
+          match.gameId          = sg.id ?? match.gameId;
           anyLive               = true;
           match.liveHomePoints  = sg.homeTeam?.points ?? 0;
           match.liveAwayPoints  = sg.awayTeam?.points ?? 0;
@@ -385,6 +425,18 @@ async function fetchLiveScores() {
           match.awayPoints   = sg.awayTeam?.points;
         }
       });
+    }
+
+    // Fetch live player stats for every in-progress game (parallel, not queued)
+    const liveGames = allGames.filter(g => g.isLive && g.gameId);
+    if (liveGames.length > 0) {
+      const hdrs = { "Authorization": `Bearer ${API_KEY}` };
+      await Promise.all(liveGames.map(async g => {
+        try {
+          const r = await fetch(`${CFBD_BASE}/games/players?year=${SEASON}&gameId=${g.gameId}`, { headers: hdrs });
+          if (r.ok) g.liveStats = parseLivePlayerStats(await r.json(), g.home, g.away);
+        } catch { /* non-fatal */ }
+      }));
     }
 
     const newState = allGames.map(g => `${g.isLive}|${g.liveHomePoints}|${g.liveAwayPoints}|${g.liveHomeWinProb}|${g.isCompleted}`).join(",");
@@ -1045,6 +1097,29 @@ function displayGames(gameList) {
       const situation  = game.liveSituation
         ? `<div class="live-situation">${game.liveSituation}</div>`
         : "";
+
+      // Player stat rows
+      const statRow = (label, leader) => {
+        if (!leader) return "";
+        const s = leader.stats;
+        let val = "";
+        if (label === "PASS") val = [s["C/ATT"], s["YDS"] && s["YDS"]+"YDS", s["TD"] && s["TD"]+"TD", s["INT"] && s["INT"]+"INT"].filter(Boolean).join(" · ");
+        else if (label === "RUSH") val = [s["CAR"] && s["CAR"]+"CAR", s["YDS"] && s["YDS"]+"YDS", s["TD"] && s["TD"]+"TD"].filter(Boolean).join(" · ");
+        else val = [s["REC"] && s["REC"]+"REC", s["YDS"] && s["YDS"]+"YDS", s["TD"] && s["TD"]+"TD"].filter(Boolean).join(" · ");
+        return `<div class="live-stat-row"><span class="live-stat-cat">${label}</span><span class="live-stat-name">${leader.name}</span><span class="live-stat-val">${val}</span></div>`;
+      };
+      const teamStatBlock = (key, abbr) => {
+        const ts = game.liveStats?.[key];
+        if (!ts) return "";
+        const rows = [statRow("PASS",ts.passing), statRow("RUSH",ts.rushing), statRow("REC",ts.receiving)].filter(Boolean).join("");
+        return rows ? `<div class="live-stats-team">${abbr}</div>${rows}` : "";
+      };
+      const homeAbbr = game.home.split(" ").pop().slice(0,4).toUpperCase();
+      const awayAbbr = game.away.split(" ").pop().slice(0,4).toUpperCase();
+      const statsSection = game.liveStats
+        ? `<div class="live-stats-box">${teamStatBlock("home",homeAbbr)}${teamStatBlock("away",awayAbbr)}</div>`
+        : "";
+
       resultHTML = `
         <div class="prediction">
           <div class="pred-label">
@@ -1059,12 +1134,13 @@ function displayGames(gameList) {
           ${situation}
           ${liveWP != null ? `
             <div class="prob-bar">
-              <div class="prob-fill" style="width:${Math.max(liveWP, liveAwayWP)}%"></div>
+              <div class="prob-fill" style="width:${Math.max(liveWP, liveAwayWP)}%; transition:width 1s ease"></div>
             </div>
             <div class="prob-text">
-              ${game.home}: ${liveWP}% win &nbsp;|&nbsp; ${game.away}: ${liveAwayWP}% win
+              ${game.home}: ${liveWP}% &nbsp;|&nbsp; ${game.away}: ${liveAwayWP}%
             </div>
           ` : ""}
+          ${statsSection}
         </div>
       `;
     } else if (game.isCompleted) {
