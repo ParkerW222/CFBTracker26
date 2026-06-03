@@ -419,7 +419,7 @@ body.lsu-mode header h1 {
   text-shadow: 0 0 24px rgba(253, 208, 35, 0.3);
 }
 
-body.lsu-mode .sec-showcase,
+body.lsu-mode .conf-browser,
 body.lsu-mode .filters {
   background: #0d0022;
   border-color: #2a0855;
@@ -457,39 +457,77 @@ body.lsu-mode footer {
 
 
 /* ================================
-   SEC SHOWCASE
+   CONFERENCE BROWSER
    ================================ */
 
-.sec-showcase {
+.conf-browser {
   background: #0a0a16;
   border-bottom: 1px solid #1a1a30;
-  padding: 28px 20px;
+  padding: 24px 20px 28px;
 }
 
-.sec-showcase-inner {
+.conf-browser-inner {
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.sec-showcase-title {
+.conf-browser-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #6670a0;
   text-transform: uppercase;
   letter-spacing: 3px;
   text-align: center;
+  margin-bottom: 16px;
+}
+
+/* Conference tab row */
+.conf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
   margin-bottom: 20px;
 }
 
-.sec-logos {
+.conf-tab {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #6670a0;
+  background: transparent;
+  border: 1px solid #1a1a30;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.conf-tab:hover {
+  color: #c8d0e8;
+  border-color: #2a2a50;
+  background: #0d0d20;
+}
+
+.conf-tab.active {
+  color: #ffffff;
+  background: var(--conf-color);
+  border-color: var(--conf-color);
+}
+
+/* Team logo grid */
+.conf-team-grid {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px;
+  min-height: 90px;
 }
 
-.sec-team-item {
+.conf-team-item {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -502,25 +540,24 @@ body.lsu-mode footer {
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
-.sec-team-item:hover {
+.conf-team-item:hover {
   background: #13132a;
   border-color: #2a2a50;
   transform: translateY(-4px);
 }
 
-.sec-team-logo {
+.conf-team-logo {
   width: 50px;
   height: 50px;
   object-fit: contain;
 }
 
-.sec-team-name {
+.conf-team-name {
   font-family: 'Inter', sans-serif;
   font-size: 9px;
   font-weight: 600;
   text-align: center;
   line-height: 1.3;
-  color: #8890a8;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }

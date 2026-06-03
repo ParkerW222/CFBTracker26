@@ -265,7 +265,7 @@ async function loadGames() {
     });
 
     populateTeamFilter(allGames);
-    populateSECShowcase();
+    populateConfBrowser();
     applyFilters(); // respects the default week selection in the dropdown
 
     fetchLiveScores();
@@ -391,24 +391,82 @@ function formatDate(isoString) {
 // down to the matching games.
 // ================================
 
-const SEC_TEAMS = [
-  "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky",
-  "Vanderbilt", "Mississippi State", "Missouri", "Ole Miss", "Oklahoma",
-  "South Carolina", "Tennessee", "Texas", "Texas A&M", "LSU"
+// Canonical display order for conference tabs (FBS only — teamMap is built
+// from /teams/fbs so no FCS conferences will appear anyway)
+const CONF_ORDER = [
+  "SEC", "Big Ten", "Big 12", "ACC",
+  "Mountain West", "American Athletic", "Sun Belt", "MAC",
+  "Conference USA", "FBS Independents"
 ];
 
-function populateSECShowcase() {
-  const container = document.getElementById("secLogos");
-  if (!container) return;
+const CONF_SHORT = {
+  "SEC":               "SEC",
+  "Big Ten":           "Big Ten",
+  "Big 12":            "Big 12",
+  "ACC":               "ACC",
+  "Mountain West":     "Mtn West",
+  "American Athletic": "AAC",
+  "Sun Belt":          "Sun Belt",
+  "MAC":               "MAC",
+  "Conference USA":    "C-USA",
+  "FBS Independents":  "Indep."
+};
 
-  container.innerHTML = SEC_TEAMS.map(team => {
+let activeConf      = "SEC";
+let confTeamsByConf = {};
+
+function populateConfBrowser() {
+  // Group FBS teams (from teamMap) by conference
+  confTeamsByConf = {};
+  Object.entries(teamMap).forEach(([team, info]) => {
+    const conf = info.conference;
+    if (!conf) return;
+    if (!confTeamsByConf[conf]) confTeamsByConf[conf] = [];
+    confTeamsByConf[conf].push(team);
+  });
+
+  Object.keys(confTeamsByConf).forEach(conf => confTeamsByConf[conf].sort());
+
+  const tabsEl = document.getElementById("confTabs");
+  if (!tabsEl) return;
+
+  const ordered = CONF_ORDER.filter(c => confTeamsByConf[c]);
+
+  tabsEl.innerHTML = ordered.map(conf => {
+    const c = CONF_COLORS[conf] || { bg: "#2a2a4a" };
+    return `<button class="conf-tab" data-conf="${conf}"
+              style="--conf-color:${c.bg}"
+              onclick="showConfTeams('${conf}')">
+              ${CONF_SHORT[conf] || conf}
+            </button>`;
+  }).join("");
+
+  // Default to SEC, fall back to first available conference
+  const defaultConf = confTeamsByConf["SEC"] ? "SEC" : ordered[0];
+  showConfTeams(defaultConf);
+}
+
+function showConfTeams(confName) {
+  activeConf = confName;
+
+  document.querySelectorAll(".conf-tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.conf === confName);
+  });
+
+  const teams = confTeamsByConf[confName] || [];
+  const grid  = document.getElementById("confTeamGrid");
+  if (!grid) return;
+
+  grid.innerHTML = teams.map(team => {
     const info  = teamMap[team] || {};
-    const logo  = info.logo  ? `<img class="sec-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">` : "";
+    const logo  = info.logo
+      ? `<img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">`
+      : "";
     const color = info.color || "#8890a8";
     return `
-      <div class="sec-team-item" onclick="filterToTeam('${team}')">
+      <div class="conf-team-item" onclick="filterToTeam('${team}')">
         ${logo}
-        <div class="sec-team-name" style="color:${color}">${team}</div>
+        <div class="conf-team-name" style="color:${color}">${team}</div>
       </div>
     `;
   }).join("");
