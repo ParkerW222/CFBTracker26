@@ -268,6 +268,8 @@ async function loadGames() {
     populateSECShowcase();
     applyFilters(); // respects the default week selection in the dropdown
 
+    fetchLiveScores();
+    startLivePolling();
 
   } catch (err) {
     const msg = err.message === "429"
@@ -281,6 +283,97 @@ async function loadGames() {
     console.error(err);
   }
 }
+
+// ================================
+// LIVE SCORES
+// Polls the CFBD scoreboard endpoint
+// for in-progress games and updates
+// win probabilities in real time.
+// Runs every 30 s during a live game,
+// every 90 s otherwise.
+// ================================
+
+let liveInterval  = null;
+let liveIntervalMs = 90_000;
+
+async function fetchLiveScores() {
+  if (allGames.length === 0) return false;
+  const headers = { "Authorization": `Bearer ${API_KEY}` };
+  try {
+    const res = await fetch(`${CFBD_BASE}/scoreboard?classification=fbs`, { headers });
+    if (!res.ok) return false;
+    const data = await res.json();
+
+    // Clear all live flags so games that ended drop back to normal display
+    allGames.forEach(g => { g.isLive = false; });
+
+    let anyLive = false;
+    if (Array.isArray(data)) {
+      data.forEach(sg => {
+        const hn = sg.homeTeam?.name;
+        const an = sg.awayTeam?.name;
+        if (!hn || !an) return;
+        const match = allGames.find(g => g.home === hn && g.away === an);
+        if (!match) return;
+
+        if (sg.status === "in_progress") {
+          match.isLive          = true;
+          anyLive               = true;
+          match.liveHomePoints  = sg.homeTeam?.points ?? 0;
+          match.liveAwayPoints  = sg.awayTeam?.points ?? 0;
+          match.liveHomeWinProb = sg.homeTeam?.winProbability != null
+            ? Math.round(sg.homeTeam.winProbability * 100)
+            : null;
+          match.livePeriod      = sg.period    || null;
+          match.liveClock       = sg.clock     || null;
+          match.liveSituation   = sg.situation || null;
+        } else if (sg.status === "final") {
+          match.isCompleted  = true;
+          match.isLive       = false;
+          match.homePoints   = sg.homeTeam?.points;
+          match.awayPoints   = sg.awayTeam?.points;
+        }
+      });
+    }
+
+    applyFilters();
+
+    // Speed up polling while games are live, slow down otherwise
+    const targetMs = anyLive ? 30_000 : 90_000;
+    if (targetMs !== liveIntervalMs) {
+      liveIntervalMs = targetMs;
+      restartLivePolling();
+    }
+
+    return anyLive;
+  } catch (e) {
+    console.warn("Live score fetch failed:", e);
+    return false;
+  }
+}
+
+function startLivePolling() {
+  if (liveInterval) return;
+  liveInterval = setInterval(fetchLiveScores, liveIntervalMs);
+}
+
+function restartLivePolling() {
+  clearInterval(liveInterval);
+  liveInterval = null;
+  startLivePolling();
+}
+
+// Pause polling while the tab is hidden to avoid unnecessary requests
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearInterval(liveInterval);
+    liveInterval = null;
+  } else {
+    fetchLiveScores();
+    startLivePolling();
+  }
+});
+
 
 function formatDate(isoString) {
   if (!isoString) return "TBD";
@@ -431,11 +524,44 @@ function displayGames(gameList) {
   container.innerHTML = gameList.map(function(game) {
     let resultHTML;
 
-    if (game.isCompleted) {
+    if (game.isLive) {
+      const liveWP     = game.liveHomeWinProb;
+      const liveAwayWP = liveWP != null ? 100 - liveWP : null;
+      const periodStr  = game.livePeriod ? `Q${game.livePeriod}` : "";
+      const clockStr   = game.liveClock  || "";
+      const timeInfo   = [periodStr, clockStr].filter(Boolean).join(" · ");
+      const situation  = game.liveSituation
+        ? `<div class="live-situation">${game.liveSituation}</div>`
+        : "";
+      resultHTML = `
+        <div class="prediction">
+          <div class="pred-label">
+            <span class="live-badge"><span class="live-dot"></span>Live</span>
+            ${timeInfo ? `<span class="live-time">${timeInfo}</span>` : ""}
+          </div>
+          <div class="live-score">
+            ${game.home} <strong>${game.liveHomePoints ?? 0}</strong>
+            <span class="live-dash">—</span>
+            <strong>${game.liveAwayPoints ?? 0}</strong> ${game.away}
+          </div>
+          ${situation}
+          ${liveWP != null ? `
+            <div class="prob-bar">
+              <div class="prob-fill" style="width:${Math.max(liveWP, liveAwayWP)}%"></div>
+            </div>
+            <div class="prob-text">
+              ${game.home}: ${liveWP}% win &nbsp;|&nbsp; ${game.away}: ${liveAwayWP}% win
+            </div>
+          ` : ""}
+        </div>
+      `;
+    } else if (game.isCompleted) {
       const winner = game.homePoints > game.awayPoints ? game.home : game.away;
       resultHTML = `
         <div class="prediction">
-          <div class="pred-label">Final Score</div>
+          <div class="pred-label">
+            <span class="final-badge">Final</span>
+          </div>
           <div class="pred-winner">🏆 ${winner}</div>
           <div class="prob-text">
             ${game.home} ${game.homePoints} &nbsp;|&nbsp; ${game.away} ${game.awayPoints}
