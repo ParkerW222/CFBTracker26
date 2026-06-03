@@ -731,6 +731,25 @@ body.lsu-mode footer {
   letter-spacing: 0.5px;
 }
 
+.conf-team-rank {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fdd023;
+  text-align: center;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.conf-team-record {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.38);
+  text-align: center;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
 
 /* ================================
    FILTERS SECTION

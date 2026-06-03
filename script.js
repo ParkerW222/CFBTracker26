@@ -12,7 +12,9 @@ const SEASON = 2026;
 let allGames = [];
 
 // Holds team metadata (colors, logos, mascots) keyed by team name
-let teamMap = {};
+let teamMap    = {};
+let recordMap  = {}; // team → "W-L"
+let rankingMap = {}; // team → AP poll rank number
 
 // Players who left each team for 2026: { "LSU": Set("garrett nussmeier", ...) }
 let draftExits    = {};  // keyed by college team name
@@ -209,14 +211,17 @@ async function loadGames() {
 
     const safe = (key, url) => fetchCached(url, headers, key).catch(() => []);
 
-    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData] = await Promise.all([
+    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData, recordData, rankingsData, rankingsPreData] = await Promise.all([
       safe(`cfbd_teams_${SEASON}`,       `${CFBD_BASE}/teams/fbs?year=${SEASON}`),
       safe(`cfbd_wp_${SEASON}`,          `${CFBD_BASE}/metrics/wp/pregame?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_lines_${SEASON}`,       `${CFBD_BASE}/lines?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_sp_${SEASON - 1}`,      `${CFBD_BASE}/ratings/sp?year=${SEASON - 1}`),
       safe(`cfbd_draft_${SEASON}`,       `${CFBD_BASE}/draft/picks?year=${SEASON}`),
       safe(`cfbd_draft_${SEASON - 1}`,   `${CFBD_BASE}/draft/picks?year=${SEASON - 1}`),
-      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`)
+      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`),
+      safe(`cfbd_records_${SEASON}`,     `${CFBD_BASE}/records?year=${SEASON}`),
+      safe(`cfbd_rankings_${SEASON}`,    `${CFBD_BASE}/rankings?year=${SEASON}&seasonType=regular`),
+      safe(`cfbd_rankings_pre_${SEASON}`,`${CFBD_BASE}/rankings?year=${SEASON}&seasonType=preseason`)
     ]);
 
     // Build lookup maps
@@ -261,6 +266,23 @@ async function loadGames() {
         portalIncoming[entry.destination].push(entry);
       }
     });
+
+    // Team records: W-L from total games
+    recordData.forEach(r => {
+      if (r.team && r.total) {
+        recordMap[r.team] = `${r.total.wins}-${r.total.losses}`;
+      }
+    });
+
+    // AP Poll rankings — prefer regular season; fall back to preseason
+    const pickRankings = (data) => {
+      if (!Array.isArray(data) || !data.length) return;
+      const latestWeek = data.reduce((mx, r) => r.week > mx ? r.week : mx, 0);
+      const weekData   = data.find(r => r.week === latestWeek);
+      const ap = weekData?.polls?.find(p => /ap/i.test(p.poll));
+      (ap?.ranks || []).forEach(r => { rankingMap[r.school] = r.rank; });
+    };
+    pickRankings(rankingsData.length ? rankingsData : rankingsPreData);
 
     // Transform the API data into the shape our display function expects
     allGames = gamesData.map(game => {
@@ -569,10 +591,14 @@ function showConfTeams(confName) {
            <img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">
          </div>`
       : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
+    const rank   = rankingMap[team];
+    const record = recordMap[team] || "0-0";
     return `
       <div class="conf-team-item" onclick="filterToTeam('${team}')">
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
+        ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
+        <div class="conf-team-record">${record}</div>
       </div>
     `;
   }).join("");
