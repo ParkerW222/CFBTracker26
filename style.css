@@ -438,13 +438,11 @@ header p {
    LSU LEGEND DETAIL MODAL
    -------------------------------- */
 
-.legend-modal-overlay {
-  align-items: center;
-  justify-content: center;
-}
-
 .legend-modal-overlay.open {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
 .legend-modal-card {
