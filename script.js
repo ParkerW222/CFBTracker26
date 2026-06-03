@@ -459,13 +459,15 @@ function showConfTeams(confName) {
 
   grid.innerHTML = teams.map(team => {
     const info  = teamMap[team] || {};
-    const logo  = info.logo
-      ? `<img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">`
-      : "";
     const color = info.color || "#8890a8";
+    const frame = info.logo
+      ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66">
+           <img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">
+         </div>`
+      : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
     return `
       <div class="conf-team-item" onclick="filterToTeam('${team}')">
-        ${logo}
+        ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
       </div>
     `;

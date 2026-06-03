@@ -546,9 +546,25 @@ body.lsu-mode footer {
   transform: translateY(-4px);
 }
 
+.conf-logo-frame {
+  width: 62px;
+  height: 62px;
+  border-radius: 14px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: filter 0.2s ease;
+}
+
+.conf-team-item:hover .conf-logo-frame {
+  filter: brightness(1.25) saturate(1.15);
+}
+
 .conf-team-logo {
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
 }
 
