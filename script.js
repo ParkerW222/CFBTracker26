@@ -552,9 +552,10 @@ function openLegendModal(idx) {
   const p = LSU_LEGENDS[idx];
   if (!p) return;
 
-  document.getElementById("legendModalPhoto").src =
-    `https://a.espncdn.com/i/headshots/nfl/players/full/${p.espnId}.png`;
-  document.getElementById("legendModalPhoto").alt = p.name;
+  const legendPhoto = document.getElementById("legendModalPhoto");
+  legendPhoto.style.opacity = "";
+  legendPhoto.src = `https://a.espncdn.com/i/headshots/nfl/players/full/${p.espnId}.png`;
+  legendPhoto.alt = p.name;
   document.getElementById("legendModalName").textContent   = p.name;
   document.getElementById("legendModalMeta").textContent   = `${p.pos}  ·  LSU ${p.years}`;
   document.getElementById("legendModalAward").textContent  = p.note;
