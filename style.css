@@ -439,7 +439,7 @@ header p {
    -------------------------------- */
 
 .legend-modal-overlay.open {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   padding: 20px;
