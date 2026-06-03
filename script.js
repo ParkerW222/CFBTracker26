@@ -489,22 +489,54 @@ function filterToTeam(team) {
 // ================================
 
 const LSU_LEGENDS = [
-  { name: "Joe Burrow",        pos: "QB", years: "2018–19", espnId: "3915511", note: "2019 Heisman Winner"   },
-  { name: "Jayden Daniels",    pos: "QB", years: "2023",    espnId: "4426348", note: "2023 Heisman Winner"   },
-  { name: "Odell Beckham Jr.", pos: "WR", years: "2011–13", espnId: "16733",   note: "3× All-SEC"           },
-  { name: "Leonard Fournette", pos: "RB", years: "2014–16", espnId: "3115364", note: "#4 Pick, 2017 Draft"  },
-  { name: "Ja'Marr Chase",     pos: "WR", years: "2018–20", espnId: "4362628", note: "2020 Biletnikoff Awd" },
-  { name: "Justin Jefferson",  pos: "WR", years: "2017–19", espnId: "4262921", note: "3× All-Pro"           },
-  { name: "Tyrann Mathieu",    pos: "DB", years: "2010–12", espnId: "15851",   note: "\"The Honey Badger\"" },
-  { name: "Patrick Peterson",  pos: "CB", years: "2008–10", espnId: "13980",   note: "2011 Thorpe Award"    },
+  {
+    name: "Joe Burrow", pos: "QB", years: "2018–19", espnId: "3915511",
+    note: "2019 Heisman Winner",
+    detail: "Led LSU to a perfect 15–0 national championship in 2019, setting NCAA single-season records with 5,671 passing yards and 60 touchdowns. Won the Heisman Trophy by the largest margin in history."
+  },
+  {
+    name: "Jayden Daniels", pos: "QB", years: "2023", espnId: "4426348",
+    note: "2023 Heisman Winner",
+    detail: "Won the 2023 Heisman Trophy after passing for 3,812 yards and 40 TDs while rushing for 1,134 yards. His dual-threat dominance made him the consensus best player in college football."
+  },
+  {
+    name: "Odell Beckham Jr.", pos: "WR", years: "2011–13", espnId: "16733",
+    note: "3× All-SEC",
+    detail: "A three-time All-SEC selection whose elite route running and acrobatic catches made him one of the most exciting receivers in Tiger Stadium history, setting the stage for a legendary NFL career."
+  },
+  {
+    name: "Leonard Fournette", pos: "RB", years: "2014–16", espnId: "3115364",
+    note: "#4 Pick, 2017 Draft",
+    detail: "Rushed for 2,531 yards in 2015 alone, earning consensus All-American honors. His combination of size, speed, and power made him one of the most physically imposing backs LSU has ever produced."
+  },
+  {
+    name: "Ja'Marr Chase", pos: "WR", years: "2018–20", espnId: "4362628",
+    note: "2020 Biletnikoff Award",
+    detail: "Won the 2020 Biletnikoff Award with 84 catches, 1,780 yards, and 20 TDs. His chemistry with Joe Burrow formed the most prolific QB–WR duo in college football history."
+  },
+  {
+    name: "Justin Jefferson", pos: "WR", years: "2017–19", espnId: "4262921",
+    note: "3× All-Pro",
+    detail: "Caught 111 passes for 1,540 yards and 18 TDs during LSU's 2019 title run. Went on to set the NFL record for most receiving yards through a player's first four seasons."
+  },
+  {
+    name: "Tyrann Mathieu", pos: "DB", years: "2010–12", espnId: "15851",
+    note: '"The Honey Badger"',
+    detail: "Named 2011 SEC Defensive Player of the Year with 4 interceptions and 6 forced fumbles. His fearless playmaking style earned him the legendary nickname \"The Honey Badger\" and an iconic place in Tiger Stadium lore."
+  },
+  {
+    name: "Patrick Peterson", pos: "CB", years: "2008–10", espnId: "13980",
+    note: "2011 Thorpe Award",
+    detail: "Won the Jim Thorpe Award as the nation's best defensive back and was a two-time first-team All-SEC selection. Drafted #5 overall in 2011, he became one of the premier shutdown corners in NFL history."
+  },
 ];
 
 function populateLSULegends() {
   const container = document.getElementById("lsuLegends");
   if (!container || container.children.length > 0) return;
 
-  container.innerHTML = LSU_LEGENDS.map(p => `
-    <div class="lsu-legend-card">
+  container.innerHTML = LSU_LEGENDS.map((p, i) => `
+    <div class="lsu-legend-card" onclick="openLegendModal(${i})">
       <img class="lsu-legend-photo"
            src="https://a.espncdn.com/i/headshots/nfl/players/full/${p.espnId}.png"
            alt="${p.name}" loading="lazy"
@@ -515,6 +547,31 @@ function populateLSULegends() {
     </div>
   `).join("");
 }
+
+function openLegendModal(idx) {
+  const p = LSU_LEGENDS[idx];
+  if (!p) return;
+
+  document.getElementById("legendModalPhoto").src =
+    `https://a.espncdn.com/i/headshots/nfl/players/full/${p.espnId}.png`;
+  document.getElementById("legendModalPhoto").alt = p.name;
+  document.getElementById("legendModalName").textContent   = p.name;
+  document.getElementById("legendModalMeta").textContent   = `${p.pos}  ·  LSU ${p.years}`;
+  document.getElementById("legendModalAward").textContent  = p.note;
+  document.getElementById("legendModalDetail").textContent = p.detail;
+
+  document.getElementById("legendModal").classList.add("open");
+}
+
+function closeLegendModal() {
+  document.getElementById("legendModal").classList.remove("open");
+}
+
+document.getElementById("legendModalClose").addEventListener("click", closeLegendModal);
+document.getElementById("legendModal").addEventListener("click", function(e) {
+  if (e.target === this) closeLegendModal();
+});
+
 
 // ================================
 // LSU MINI GAME
@@ -1253,7 +1310,9 @@ document.getElementById("rosterModal").addEventListener("click", function(e) {
 });
 document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") {
-    if (document.getElementById("playerModal").classList.contains("open")) {
+    if (document.getElementById("legendModal").classList.contains("open")) {
+      closeLegendModal();
+    } else if (document.getElementById("playerModal").classList.contains("open")) {
       closePlayerModal();
     } else {
       closeModal();
