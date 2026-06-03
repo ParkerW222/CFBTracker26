@@ -443,6 +443,10 @@ header p {
   justify-content: center;
 }
 
+.legend-modal-overlay.open {
+  display: flex;
+}
+
 .legend-modal-card {
   position: relative;
   background: linear-gradient(160deg, #0d0025 0%, #1a0040 60%, #0d0025 100%);

@@ -699,21 +699,85 @@ const LSU_GAME = (() => {
     drawRunner();
   }
 
+  function drawStadiumLight(x, y, r) {
+    // Light tower pole
+    ctx.strokeStyle = "rgba(160,160,180,0.45)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, y + r + 1); ctx.lineTo(x, y + 36); ctx.stroke();
+    // Horizontal arm
+    ctx.beginPath(); ctx.moveTo(x - 7, y + r + 1); ctx.lineTo(x + 7, y + r + 1); ctx.stroke();
+    // Outer glow halo
+    const halo = ctx.createRadialGradient(x, y, 0, x, y, r * 7);
+    halo.addColorStop(0,   "rgba(255,248,200,0.55)");
+    halo.addColorStop(0.25,"rgba(255,240,160,0.18)");
+    halo.addColorStop(1,   "rgba(255,240,160,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(x, y, r * 7, 0, Math.PI * 2); ctx.fill();
+    // Bright core
+    ctx.fillStyle = "rgba(255,252,220,0.95)";
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+
   function drawField() {
-    // Night sky
-    const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
-    sky.addColorStop(0, "#06001a");
-    sky.addColorStop(1, "#130030");
-    ctx.fillStyle = sky;
+    // ---- Night sky ----
+    ctx.fillStyle = "#03020a";
     ctx.fillRect(0, 0, W, GROUND);
-    // Turf
+
+    // Field-light ambient glow rising from below
+    const ambient = ctx.createRadialGradient(W / 2, GROUND, 20, W / 2, GROUND / 2, W * 0.75);
+    ambient.addColorStop(0, "rgba(200,180,80,0.09)");
+    ambient.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = ambient;
+    ctx.fillRect(0, 0, W, GROUND);
+
+    // ---- Stadium stands (rows of seats) ----
+    const STAND_TOP = 6, STAND_H = 58, ROWS = 9;
+    const rowH = STAND_H / ROWS;
+    const rowColors = ["#140a1e","#110818","#160b22","#12091a","#170c24","#130920","#15091e","#110718","#140a1c"];
+    for (let i = 0; i < ROWS; i++) {
+      ctx.fillStyle = rowColors[i];
+      ctx.fillRect(0, STAND_TOP + i * rowH, W, rowH + 0.5);
+    }
+
+    // ---- Crowd dots (LSU gold + purple + dark) ----
+    // Uses sin-based deterministic pattern so it's consistent across frames
+    for (let cx = 6; cx < W - 6; cx += 5) {
+      for (let cy = STAND_TOP + 3; cy < STAND_TOP + STAND_H - 4; cy += 5) {
+        const v = (Math.sin(cx * 6.7 + cy * 11.3) + 1) * 0.5;
+        if (v > 0.62) {
+          ctx.fillStyle = v > 0.85 ? "#fdd023" : (v > 0.73 ? "#4b0082" : "#2d1040");
+          ctx.fillRect(cx, cy, 2, 2);
+        }
+      }
+    }
+
+    // ---- Stadium lights (2 banks per side) ----
+    drawStadiumLight(48,  10, 4);
+    drawStadiumLight(112, 7,  3);
+    drawStadiumLight(W - 48,  10, 4);
+    drawStadiumLight(W - 112, 7,  3);
+
+    // ---- Fade stands into field ----
+    const fade = ctx.createLinearGradient(0, STAND_TOP + STAND_H - 14, 0, GROUND);
+    fade.addColorStop(0, "rgba(3,2,10,0)");
+    fade.addColorStop(1, "rgba(3,2,10,1)");
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, STAND_TOP + STAND_H - 14, W, GROUND - (STAND_TOP + STAND_H - 14));
+
+    // ---- Turf ----
     ctx.fillStyle = "#0b3010";
     ctx.fillRect(0, GROUND, W, H - GROUND);
-    // Ground stripe
-    ctx.fillStyle = "#165a20";
+    // Turf stripe alternation
+    const stripeOff = (tick * speed * 0.5) % 40;
+    for (let x = -stripeOff; x < W; x += 40) {
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      ctx.fillRect(x, GROUND, 20, H - GROUND);
+    }
+    // Ground line
+    ctx.fillStyle = "#1a6025";
     ctx.fillRect(0, GROUND, W, 3);
-    // Scrolling yard lines
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    // Yard lines
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1.5;
     const off = (tick * speed) % 90;
     for (let x = W - off; x > -90; x -= 90) {
