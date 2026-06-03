@@ -579,7 +579,12 @@ function showConfTeams(confName) {
     tab.classList.toggle("active", tab.dataset.conf === confName);
   });
 
-  const teams = confTeamsByConf[confName] || [];
+  // Sort by wins desc → losses asc → alphabetical
+  const parseRec = t => { const [w=0,l=0] = (recordMap[t]||"0-0").split("-").map(Number); return {w,l}; };
+  const teams = [...(confTeamsByConf[confName] || [])].sort((a, b) => {
+    const ra = parseRec(a), rb = parseRec(b);
+    return rb.w - ra.w || ra.l - rb.l || a.localeCompare(b);
+  });
   const grid  = document.getElementById("confTeamGrid");
   if (!grid) return;
 
@@ -1251,9 +1256,21 @@ function displayGames(gameList) {
         </div>
         <div class="matchup roster-trigger" data-home="${game.home}" data-away="${game.away}">
           <div class="matchup-line">
-            <span class="team-name-block">${homeLogo}${game.home}</span>
+            <span class="team-name-block">
+              ${homeLogo}
+              <span class="matchup-team-col">
+                <span>${game.home}</span>
+                <span class="matchup-record-tag">${[rankingMap[game.home] ? `#${rankingMap[game.home]}` : null, recordMap[game.home] || "0-0"].filter(Boolean).join(" · ")}</span>
+              </span>
+            </span>
             <span class="vs-label">vs</span>
-            <span class="team-name-block">${game.away}${awayLogo}</span>
+            <span class="team-name-block">
+              <span class="matchup-team-col">
+                <span>${game.away}</span>
+                <span class="matchup-record-tag">${[rankingMap[game.away] ? `#${rankingMap[game.away]}` : null, recordMap[game.away] || "0-0"].filter(Boolean).join(" · ")}</span>
+              </span>
+              ${awayLogo}
+            </span>
           </div>
           ${mascotLine}
           <div class="roster-hint">👥 Click to view rosters</div>

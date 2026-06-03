@@ -917,6 +917,21 @@ main {
   gap: 6px;
 }
 
+.matchup-team-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.matchup-record-tag {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.38);
+  letter-spacing: 0.3px;
+}
+
 .team-logo-sm {
   width: 28px;
   height: 28px;
