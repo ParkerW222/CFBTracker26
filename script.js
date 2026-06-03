@@ -41,8 +41,8 @@ const MANUAL_EXITS = {
 
 const MANUAL_INCOMING = {
   // ---- True freshman (not in portal OR 2025 roster — must be added manually) ----
-  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, origin: "HS (Georgia)" }],
-  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, origin: "HS (Georgia)" }],
+  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, isRecruit: true }],
+  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, isRecruit: true }],
 
   // ---- Transfer QB additions (deduplication prevents doubles if API already has them) ----
   "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State"  }],
@@ -1325,7 +1325,8 @@ async function fetchRoster(team) {
         firstName: e.firstName, lastName: e.lastName, position: e.position,
         jersey: null, height: null, weight: null, year: null,
         homeCity: null, homeState: null,
-        isTransfer: true, stars: e.stars || 0, origin: e.origin || ""
+        isTransfer: !e.isRecruit, isRecruit: e.isRecruit || false,
+        stars: e.stars || 0, origin: e.origin || ""
       }));
     data = [...data, ...toAdd];
   }
@@ -1406,7 +1407,9 @@ function buildRosterHTML(players, team) {
         const ht     = formatHeight(p.height);
         const wt     = p.weight ? `${p.weight} lbs` : "";
         const meta   = [yr, ht, wt].filter(Boolean).join(" · ");
-        const xfer   = p.isTransfer
+        const xfer   = p.isRecruit
+          ? `<span class="transfer-badge recruit-badge">${"★".repeat(Math.min(p.stars || 0, 5))} Freshman</span>`
+          : p.isTransfer
           ? `<span class="transfer-badge">${"★".repeat(Math.min(p.stars || 0, 5))} from ${p.origin}</span>`
           : "";
         const globalIdx = players.indexOf(p);

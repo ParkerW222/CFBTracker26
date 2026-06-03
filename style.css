@@ -1283,6 +1283,12 @@ main {
   white-space: nowrap;
 }
 
+.recruit-badge {
+  color: #4caf7d;
+  background: rgba(76, 175, 125, 0.1);
+  border-color: rgba(76, 175, 125, 0.35);
+}
+
 .clickable-player {
   cursor: pointer;
   transition: background 0.15s;
