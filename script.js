@@ -18,7 +18,8 @@ let teamMap = {};
 let draftExits    = {};  // keyed by college team name
 let portalExits   = {};  // keyed by origin school name
 let portalIncoming  = {}; // players arriving: { "LSU": [ portal entry, ... ] }
-let recruitsByTeam  = {}; // 2026 HS signing class: { "Vanderbilt": [ recruit, ... ] }
+let recruitsByTeam   = {}; // 2026 HS signing class: { "Vanderbilt": [ recruit, ... ] }
+let recruitingLoaded = false;
 
 // Manual roster corrections for players whose 2026 status isn't yet in the API.
 // MANUAL_EXITS:    forces a player off a team's displayed roster (exhausted eligibility,
@@ -167,7 +168,7 @@ async function fetchCached(url, headers, cacheKey) {
             const data = await res.json();
             setCached(cacheKey, data);
             resolve(data);
-            await new Promise(r => setTimeout(r, 250)); // polite gap between requests
+            await new Promise(r => setTimeout(r, 100)); // polite gap between requests
             return;
           } catch (e) {
             if (attempt === 4) { reject(e); return; }
@@ -208,15 +209,14 @@ async function loadGames() {
 
     const safe = (key, url) => fetchCached(url, headers, key).catch(() => []);
 
-    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData, recruitData] = await Promise.all([
+    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData] = await Promise.all([
       safe(`cfbd_teams_${SEASON}`,       `${CFBD_BASE}/teams/fbs?year=${SEASON}`),
       safe(`cfbd_wp_${SEASON}`,          `${CFBD_BASE}/metrics/wp/pregame?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_lines_${SEASON}`,       `${CFBD_BASE}/lines?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_sp_${SEASON - 1}`,      `${CFBD_BASE}/ratings/sp?year=${SEASON - 1}`),
       safe(`cfbd_draft_${SEASON}`,       `${CFBD_BASE}/draft/picks?year=${SEASON}`),
       safe(`cfbd_draft_${SEASON - 1}`,   `${CFBD_BASE}/draft/picks?year=${SEASON - 1}`),
-      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`),
-      safe(`cfbd_recruits_${SEASON}`,    `${CFBD_BASE}/recruiting/players?year=${SEASON}&classification=HighSchool`)
+      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`)
     ]);
 
     // Build lookup maps
@@ -260,13 +260,6 @@ async function loadGames() {
         if (!portalIncoming[entry.destination]) portalIncoming[entry.destination] = [];
         portalIncoming[entry.destination].push(entry);
       }
-    });
-
-    // 2026 HS signing class — group by committed school
-    recruitData.forEach(r => {
-      if (!r.committedTo) return;
-      if (!recruitsByTeam[r.committedTo]) recruitsByTeam[r.committedTo] = [];
-      recruitsByTeam[r.committedTo].push(r);
     });
 
     // Transform the API data into the shape our display function expects
@@ -359,6 +352,9 @@ async function fetchLiveScores() {
     if (!res.ok) return false;
     const data = await res.json();
 
+    // Snapshot previous live state so we only re-render when something changed
+    const prevState = allGames.map(g => `${g.isLive}|${g.liveHomePoints}|${g.liveAwayPoints}|${g.liveHomeWinProb}|${g.isCompleted}`).join(",");
+
     // Clear all live flags so games that ended drop back to normal display
     allGames.forEach(g => { g.isLive = false; });
 
@@ -391,7 +387,8 @@ async function fetchLiveScores() {
       });
     }
 
-    applyFilters();
+    const newState = allGames.map(g => `${g.isLive}|${g.liveHomePoints}|${g.liveAwayPoints}|${g.liveHomeWinProb}|${g.isCompleted}`).join(",");
+    if (newState !== prevState) applyFilters();
 
     // Speed up polling while games are live, slow down otherwise
     const targetMs = anyLive ? 30_000 : 90_000;
@@ -1281,8 +1278,29 @@ loadGames();
 const rosterCache = {};
 let currentRosterData = {};
 
+// Recruiting data is large and only needed when a roster modal opens.
+// Fetch it lazily the first time rather than on page load.
+async function loadRecruitingIfNeeded() {
+  if (recruitingLoaded) return;
+  recruitingLoaded = true;
+  try {
+    const headers = { "Authorization": `Bearer ${API_KEY}` };
+    const data = await fetchCached(
+      `${CFBD_BASE}/recruiting/players?year=${SEASON}&classification=HighSchool`,
+      headers,
+      `cfbd_recruits_${SEASON}`
+    );
+    data.forEach(r => {
+      if (!r.committedTo) return;
+      if (!recruitsByTeam[r.committedTo]) recruitsByTeam[r.committedTo] = [];
+      recruitsByTeam[r.committedTo].push(r);
+    });
+  } catch { /* non-fatal — rosters still show without recruiting class */ }
+}
+
 async function fetchRoster(team) {
   if (rosterCache[team]) return rosterCache[team];
+  await loadRecruitingIfNeeded();
   const headers = { "Authorization": `Bearer ${API_KEY}` };
   let data = await fetchCached(
     `${CFBD_BASE}/roster?team=${encodeURIComponent(team)}&year=2025`,
