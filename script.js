@@ -17,7 +17,8 @@ let teamMap = {};
 // Players who left each team for 2026: { "LSU": Set("garrett nussmeier", ...) }
 let draftExits    = {};  // keyed by college team name
 let portalExits   = {};  // keyed by origin school name
-let portalIncoming = {}; // players arriving: { "LSU": [ portal entry, ... ] }
+let portalIncoming  = {}; // players arriving: { "LSU": [ portal entry, ... ] }
+let recruitsByTeam  = {}; // 2026 HS signing class: { "Vanderbilt": [ recruit, ... ] }
 
 // Manual roster corrections for players whose 2026 status isn't yet in the API.
 // MANUAL_EXITS:    forces a player off a team's displayed roster (exhausted eligibility,
@@ -207,14 +208,15 @@ async function loadGames() {
 
     const safe = (key, url) => fetchCached(url, headers, key).catch(() => []);
 
-    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData] = await Promise.all([
+    const [teamsData, wpData, linesData, spData, draftData, draft25Data, portalData, recruitData] = await Promise.all([
       safe(`cfbd_teams_${SEASON}`,       `${CFBD_BASE}/teams/fbs?year=${SEASON}`),
       safe(`cfbd_wp_${SEASON}`,          `${CFBD_BASE}/metrics/wp/pregame?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_lines_${SEASON}`,       `${CFBD_BASE}/lines?year=${SEASON}&seasonType=regular`),
       safe(`cfbd_sp_${SEASON - 1}`,      `${CFBD_BASE}/ratings/sp?year=${SEASON - 1}`),
       safe(`cfbd_draft_${SEASON}`,       `${CFBD_BASE}/draft/picks?year=${SEASON}`),
       safe(`cfbd_draft_${SEASON - 1}`,   `${CFBD_BASE}/draft/picks?year=${SEASON - 1}`),
-      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`)
+      safe(`cfbd_portal_${SEASON}`,      `${CFBD_BASE}/player/portal?year=${SEASON}`),
+      safe(`cfbd_recruits_${SEASON}`,    `${CFBD_BASE}/recruiting/players?year=${SEASON}&classification=HighSchool`)
     ]);
 
     // Build lookup maps
@@ -258,6 +260,13 @@ async function loadGames() {
         if (!portalIncoming[entry.destination]) portalIncoming[entry.destination] = [];
         portalIncoming[entry.destination].push(entry);
       }
+    });
+
+    // 2026 HS signing class — group by committed school
+    recruitData.forEach(r => {
+      if (!r.committedTo) return;
+      if (!recruitsByTeam[r.committedTo]) recruitsByTeam[r.committedTo] = [];
+      recruitsByTeam[r.committedTo].push(r);
     });
 
     // Transform the API data into the shape our display function expects
@@ -1329,6 +1338,33 @@ async function fetchRoster(team) {
         stars: e.stars || 0, origin: e.origin || ""
       }));
     data = [...data, ...toAdd];
+  }
+
+  // Inject 2026 HS signing class (deduplication prevents doubles with early enrollees)
+  const recruits = recruitsByTeam[team] || [];
+  if (recruits.length > 0) {
+    const existing = new Set(data.map(p => `${p.firstName} ${p.lastName}`.toLowerCase().trim()));
+    const freshmen = recruits
+      .filter(r => r.name && !existing.has(r.name.toLowerCase().trim()))
+      .map(r => {
+        const parts = r.name.trim().split(/\s+/);
+        return {
+          firstName:  parts[0]             || "",
+          lastName:   parts.slice(1).join(" ") || "",
+          position:   r.position           || null,
+          jersey:     null,
+          height:     r.height             || null,
+          weight:     r.weight             || null,
+          year:       null,
+          homeCity:   r.city               || null,
+          homeState:  r.stateProvince      || null,
+          isTransfer: false,
+          isRecruit:  true,
+          stars:      r.stars              || 0,
+          origin:     ""
+        };
+      });
+    data = [...data, ...freshmen];
   }
 
   rosterCache[team] = data;
