@@ -575,6 +575,18 @@ function populateConfBrowser() {
   showConfTeams(defaultConf, false);
 }
 
+// Returns a team's primary color, falling back to altColor when the primary
+// is too dark to be visible against the page background (e.g. Iowa black).
+function visibleColor(info) {
+  const hex = (info.color || "#000000").replace("#", "");
+  if (hex.length !== 6) return info.altColor || info.color || "#8890a8";
+  const r = parseInt(hex.slice(0,2), 16);
+  const g = parseInt(hex.slice(2,4), 16);
+  const b = parseInt(hex.slice(4,6), 16);
+  const luminance = r * 0.299 + g * 0.587 + b * 0.114;
+  return luminance < 40 ? (info.altColor || "#8890a8") : (info.color || "#8890a8");
+}
+
 // filterGames=true when triggered by a user click; false on initial page load
 function showConfTeams(confName, filterGames = true) {
   activeConf = confName;
@@ -600,7 +612,7 @@ function showConfTeams(confName, filterGames = true) {
 
   grid.innerHTML = teams.map(team => {
     const info  = teamMap[team] || {};
-    const color = info.color || "#8890a8";
+    const color = visibleColor(info);
     const frame = info.logo
       ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66">
            <img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">
@@ -634,7 +646,7 @@ function showAllConfs() {
   if (grid) {
     grid.innerHTML = all.map(team => {
       const info  = teamMap[team] || {};
-      const color = info.color || "#8890a8";
+      const color = visibleColor(info);
       const rank  = rankingMap[team];
       const frame = info.logo
         ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"><img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'"></div>`
