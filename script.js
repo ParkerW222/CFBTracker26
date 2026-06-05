@@ -621,7 +621,7 @@ function showConfTeams(confName, filterGames = true) {
     const rank   = rankingMap[team];
     const record = recordMap[team] || "0-0";
     return `
-      <div class="conf-team-item" onclick="filterToTeam('${team}')">
+      <div class="conf-team-item" data-team="${team.replace(/"/g, '&quot;')}">
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -651,7 +651,7 @@ function showAllConfs() {
       const frame = info.logo
         ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"><img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'"></div>`
         : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
-      return `<div class="conf-team-item" onclick="filterToTeam('${team}')">
+      return `<div class="conf-team-item" data-team="${team.replace(/"/g, '&quot;')}">
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -1432,6 +1432,13 @@ function exportCSV() {
 
 document.getElementById("weekFilter").addEventListener("change", applyFilters);
 document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+// Team logo grid — delegate clicks so team names with apostrophes (e.g. Hawai'i)
+// are handled safely via data attributes instead of inline onclick strings.
+document.getElementById("confTeamGrid").addEventListener("click", function(e) {
+  const item = e.target.closest(".conf-team-item");
+  if (item && item.dataset.team) filterToTeam(item.dataset.team);
+});
 
 // Open roster modal when any matchup is clicked (event delegation)
 document.getElementById("gamesContainer").addEventListener("click", function(e) {
