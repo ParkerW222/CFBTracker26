@@ -560,12 +560,10 @@ function populateConfBrowser() {
   const ordered = CONF_ORDER.filter(c => confTeamsByConf[c]);
 
   tabsEl.innerHTML =
-    `<button class="conf-tab conf-tab-all" data-conf="__all__" onclick="showAllConfs()">All</button>` +
+    `<button class="conf-tab conf-tab-all" data-conf="__all__">All</button>` +
     ordered.map(conf => {
       const c = CONF_COLORS[conf] || { bg: "#2a2a4a" };
-      return `<button class="conf-tab" data-conf="${conf}"
-                style="--conf-color:${c.bg}"
-                onclick="showConfTeams('${conf}', true)">
+      return `<button class="conf-tab" data-conf="${conf}" style="--conf-color:${c.bg}">
                 ${CONF_SHORT[conf] || conf}
               </button>`;
     }).join("");
@@ -1432,6 +1430,14 @@ function exportCSV() {
 
 document.getElementById("weekFilter").addEventListener("change", applyFilters);
 document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+// Conference tabs — event delegation (same reason as team grid below)
+document.getElementById("confTabs").addEventListener("click", function(e) {
+  const tab = e.target.closest(".conf-tab");
+  if (!tab) return;
+  if (tab.dataset.conf === "__all__") showAllConfs();
+  else if (tab.dataset.conf) showConfTeams(tab.dataset.conf, true);
+});
 
 // Team logo grid — delegate clicks so team names with apostrophes (e.g. Hawai'i)
 // are handled safely via data attributes instead of inline onclick strings.
