@@ -1418,7 +1418,7 @@ function exportCSV() {
 // EVENT LISTENER + STARTUP
 // ================================
 
-document.getElementById("filterBtn").addEventListener("click", applyFilters);
+document.getElementById("weekFilter").addEventListener("change", applyFilters);
 document.getElementById("exportBtn").addEventListener("click", exportCSV);
 
 // Open roster modal when any matchup is clicked (event delegation)
