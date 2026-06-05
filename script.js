@@ -335,7 +335,6 @@ async function loadGames() {
       };
     });
 
-    populateTeamFilter(allGames);
     populateConfBrowser();
     applyFilters(); // respects the default week selection in the dropdown
 
@@ -540,6 +539,8 @@ const CONF_SHORT = {
 
 let activeConf      = "SEC";
 let confTeamsByConf = {};
+let confGameFilter  = null; // set by conf tab click
+let teamGameFilter  = null; // set by team logo click; takes priority over conf
 
 function populateConfBrowser() {
   // Group FBS teams (from teamMap) by conference
@@ -558,22 +559,31 @@ function populateConfBrowser() {
 
   const ordered = CONF_ORDER.filter(c => confTeamsByConf[c]);
 
-  tabsEl.innerHTML = ordered.map(conf => {
-    const c = CONF_COLORS[conf] || { bg: "#2a2a4a" };
-    return `<button class="conf-tab" data-conf="${conf}"
-              style="--conf-color:${c.bg}"
-              onclick="showConfTeams('${conf}')">
-              ${CONF_SHORT[conf] || conf}
-            </button>`;
-  }).join("");
+  tabsEl.innerHTML =
+    `<button class="conf-tab conf-tab-all" data-conf="__all__" onclick="showAllConfs()">All</button>` +
+    ordered.map(conf => {
+      const c = CONF_COLORS[conf] || { bg: "#2a2a4a" };
+      return `<button class="conf-tab" data-conf="${conf}"
+                style="--conf-color:${c.bg}"
+                onclick="showConfTeams('${conf}', true)">
+                ${CONF_SHORT[conf] || conf}
+              </button>`;
+    }).join("");
 
-  // Default to SEC, fall back to first available conference
+  // Default to SEC — show its team grid but don't pre-filter games
   const defaultConf = confTeamsByConf["SEC"] ? "SEC" : ordered[0];
-  showConfTeams(defaultConf);
+  showConfTeams(defaultConf, false);
 }
 
-function showConfTeams(confName) {
+// filterGames=true when triggered by a user click; false on initial page load
+function showConfTeams(confName, filterGames = true) {
   activeConf = confName;
+
+  if (filterGames) {
+    confGameFilter = confName;
+    teamGameFilter = null;
+    applyFilters();
+  }
 
   document.querySelectorAll(".conf-tab").forEach(tab => {
     tab.classList.toggle("active", tab.dataset.conf === confName);
@@ -609,9 +619,40 @@ function showConfTeams(confName) {
   }).join("");
 }
 
+function showAllConfs() {
+  confGameFilter = null;
+  teamGameFilter = null;
+  document.querySelectorAll(".conf-tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.conf === "__all__");
+  });
+  const parseRec = t => { const [w=0,l=0] = (recordMap[t]||"0-0").split("-").map(Number); return {w,l}; };
+  const all = Object.values(confTeamsByConf).flat().sort((a,b) => {
+    const ra = parseRec(a), rb = parseRec(b);
+    return rb.w - ra.w || ra.l - rb.l || a.localeCompare(b);
+  });
+  const grid = document.getElementById("confTeamGrid");
+  if (grid) {
+    grid.innerHTML = all.map(team => {
+      const info  = teamMap[team] || {};
+      const color = info.color || "#8890a8";
+      const rank  = rankingMap[team];
+      const frame = info.logo
+        ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"><img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'"></div>`
+        : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
+      return `<div class="conf-team-item" onclick="filterToTeam('${team}')">
+        ${frame}
+        <div class="conf-team-name" style="color:${color}">${team}</div>
+        ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
+        <div class="conf-team-record">${recordMap[team] || "0-0"}</div>
+      </div>`;
+    }).join("");
+  }
+  applyFilters();
+}
+
 function filterToTeam(team) {
-  const select = document.getElementById("teamFilter");
-  select.value = team;
+  teamGameFilter = team;
+  confGameFilter = null;
   applyFilters();
   document.querySelector(team === "LSU" ? ".lsu-hero" : ".filters").scrollIntoView({ behavior: "smooth" });
 }
@@ -1068,7 +1109,8 @@ function exitLSUMode() {
 }
 
 function exitLSUModeBtn() {
-  document.getElementById("teamFilter").value = "all";
+  teamGameFilter = null;
+  confGameFilter = null;
   exitLSUMode();
   applyFilters();
 }
@@ -1291,19 +1333,21 @@ function displayGames(gameList) {
 // ================================
 
 function applyFilters() {
-  const selectedTeam = document.getElementById("teamFilter").value;
   const selectedWeek = document.getElementById("weekFilter").value;
 
-  if (selectedTeam === "LSU") {
-    enterLSUMode();
-  } else {
-    exitLSUMode();
-  }
+  // LSU mode activates only when a specific team click landed on LSU
+  if (teamGameFilter === "LSU") enterLSUMode();
+  else exitLSUMode();
 
   let filtered = allGames;
 
-  if (selectedTeam !== "all") {
-    filtered = filtered.filter(g => g.home === selectedTeam || g.away === selectedTeam);
+  if (teamGameFilter) {
+    // Specific team selected — show only their games
+    filtered = filtered.filter(g => g.home === teamGameFilter || g.away === teamGameFilter);
+  } else if (confGameFilter) {
+    // Conference selected — show all games involving a team from that conference
+    const confTeams = new Set(confTeamsByConf[confGameFilter] || []);
+    filtered = filtered.filter(g => confTeams.has(g.home) || confTeams.has(g.away));
   }
 
   if (selectedWeek !== "all") {
@@ -1321,12 +1365,14 @@ function applyFilters() {
 // ================================
 
 function exportCSV() {
-  const selectedTeam = document.getElementById("teamFilter").value;
   const selectedWeek = document.getElementById("weekFilter").value;
 
   let filtered = allGames;
-  if (selectedTeam !== "all") {
-    filtered = filtered.filter(g => g.home === selectedTeam || g.away === selectedTeam);
+  if (teamGameFilter) {
+    filtered = filtered.filter(g => g.home === teamGameFilter || g.away === teamGameFilter);
+  } else if (confGameFilter) {
+    const confTeams = new Set(confTeamsByConf[confGameFilter] || []);
+    filtered = filtered.filter(g => confTeams.has(g.home) || confTeams.has(g.away));
   }
   if (selectedWeek !== "all") {
     filtered = filtered.filter(g => g.week === selectedWeek);
@@ -1360,7 +1406,7 @@ function exportCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const teamPart = selectedTeam === "all" ? "AllTeams" : selectedTeam.replace(/\s+/g, "");
+  const teamPart = teamGameFilter ? teamGameFilter.replace(/\s+/g, "") : confGameFilter ? confGameFilter.replace(/\s+/g, "") : "AllTeams";
   const weekPart = selectedWeek === "all" ? "AllWeeks" : `Week${selectedWeek}`;
   a.download = `CFBTracker_${teamPart}_${weekPart}.csv`;
   a.click();

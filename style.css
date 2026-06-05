@@ -671,6 +671,11 @@ body.lsu-mode footer {
   border-color: var(--conf-color);
 }
 
+.conf-tab-all.active {
+  background: #2a2a4a;
+  border-color: #4a4a70;
+}
+
 /* Team logo grid */
 .conf-team-grid {
   display: flex;
