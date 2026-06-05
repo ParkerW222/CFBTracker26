@@ -568,9 +568,9 @@ function populateConfBrowser() {
               </button>`;
     }).join("");
 
-  // Default to SEC — show its team grid but don't pre-filter games
+  // Default to SEC — show its team grid and pre-filter games to SEC
   const defaultConf = confTeamsByConf["SEC"] ? "SEC" : ordered[0];
-  showConfTeams(defaultConf, false);
+  showConfTeams(defaultConf, true);
 }
 
 // Returns a team's primary color, falling back to altColor when the primary
