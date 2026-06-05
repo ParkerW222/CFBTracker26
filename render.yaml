@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: CFBTracker26
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
