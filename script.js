@@ -1488,6 +1488,182 @@ document.getElementById("leaderboardModal").addEventListener("click", function(e
 
 
 // ================================
+// CFP PLAYOFF BRACKET
+// ================================
+
+let cfpBracketLoaded = false;
+let cfpLiveData = {}; // slotId → { topTeam, botTeam, topScore, botScore, completed, isLive, winner }
+
+const CFP_BRACKET = [
+  {
+    round: "First Round", date: "Dec 20–21",
+    games: [
+      { id: "r1g1", topSeed: 8,  botSeed: 9,  site: "Campus Site" },
+      { id: "r1g2", topSeed: 5,  botSeed: 12, site: "Campus Site" },
+      { id: "r1g3", topSeed: 6,  botSeed: 11, site: "Campus Site" },
+      { id: "r1g4", topSeed: 7,  botSeed: 10, site: "Campus Site" },
+    ]
+  },
+  {
+    round: "Quarterfinals", date: "Jan 1–2",
+    games: [
+      { id: "qf1", topSeed: 1, topLabel: "#1 Seed", botSeed: null, botLabel: "W(8/9)",  site: "Rose Bowl"  },
+      { id: "qf2", topSeed: 4, topLabel: "#4 Seed", botSeed: null, botLabel: "W(5/12)", site: "Fiesta Bowl" },
+      { id: "qf3", topSeed: 3, topLabel: "#3 Seed", botSeed: null, botLabel: "W(6/11)", site: "Peach Bowl"  },
+      { id: "qf4", topSeed: 2, topLabel: "#2 Seed", botSeed: null, botLabel: "W(7/10)", site: "Sugar Bowl"  },
+    ]
+  },
+  {
+    round: "Semifinals", date: "Jan 9",
+    games: [
+      { id: "sf1", topSeed: null, topLabel: "W(QF1)", botSeed: null, botLabel: "W(QF2)", site: "Cotton Bowl" },
+      { id: "sf2", topSeed: null, topLabel: "W(QF3)", botSeed: null, botLabel: "W(QF4)", site: "Orange Bowl" },
+    ]
+  },
+  {
+    round: "Championship", date: "Jan 19",
+    games: [
+      { id: "champ", topSeed: null, topLabel: "W(SF1)", botSeed: null, botLabel: "W(SF2)", site: "Atlanta, GA" },
+    ]
+  }
+];
+
+async function loadCFPBracket() {
+  if (cfpBracketLoaded) { renderCFPBracket(); return; }
+  document.getElementById("cfpBracketContainer").innerHTML =
+    `<p style="color:#6670a0;text-align:center;padding:40px 24px">Loading bracket…</p>`;
+  try {
+    const url = `${CFBD_BASE}/games?year=${SEASON}&seasonType=postseason`;
+    const games = await fetchCached(url, { Authorization: `Bearer ${API_KEY}` }, `cfbd_postseason_${SEASON}`);
+    if (Array.isArray(games) && games.length > 0) populateCFPSlots(games);
+  } catch (e) { /* no postseason data yet */ }
+  cfpBracketLoaded = true;
+  renderCFPBracket();
+}
+
+function refreshCFPBracket() {
+  cfpBracketLoaded = false;
+  localStorage.removeItem(`cfbd_postseason_${SEASON}`);
+  loadCFPBracket();
+}
+
+function populateCFPSlots(games) {
+  const byWeek = {};
+  games.forEach(g => {
+    const w = g.week || 1;
+    if (!byWeek[w]) byWeek[w] = [];
+    byWeek[w].push(g);
+  });
+  const roundSlots = [null, CFP_BRACKET[0].games, CFP_BRACKET[1].games, CFP_BRACKET[2].games, CFP_BRACKET[3].games];
+  for (let week = 1; week <= 4; week++) {
+    const weekGames = byWeek[week];
+    const slots = roundSlots[week];
+    if (!weekGames || !slots) continue;
+    weekGames.sort((a, b) => a.id - b.id);
+    weekGames.forEach((g, i) => {
+      if (!slots[i]) return;
+      const started = g.startDate && new Date(g.startDate) < new Date();
+      cfpLiveData[slots[i].id] = {
+        topTeam:  g.homeTeam,
+        botTeam:  g.awayTeam,
+        topScore: g.homePoints,
+        botScore: g.awayPoints,
+        completed: !!g.completed,
+        isLive:    !g.completed && !!started,
+        winner:    g.completed ? (g.homePoints > g.awayPoints ? "top" : "bot") : null,
+      };
+    });
+  }
+}
+
+function renderCFPBracket() {
+  const container = document.getElementById("cfpBracketContainer");
+  const hasData = Object.keys(cfpLiveData).length > 0;
+
+  const makeSlot = (slot, side, live) => {
+    const seedNum  = slot[side + "Seed"];
+    const fallback = slot[side + "Label"] || "TBD";
+    const teamName = live[side + "Team"] || null;
+    const score    = live[side + "Score"];
+    const isWinner = live.winner === side;
+    const isLoser  = live.winner && live.winner !== side;
+    const info     = teamName && teamMap[teamName];
+    const logoHTML = info && info.logo
+      ? `<img class="cfp-logo" src="${info.logo}" onerror="this.style.display='none'" alt="">`
+      : "";
+    const seedLabel = typeof seedNum === "number" ? `#${seedNum}` : "";
+    const displayName = teamName || fallback;
+    return `<div class="cfp-team-slot${isWinner ? " cfp-winner" : ""}${isLoser ? " cfp-loser" : ""}">
+      <span class="cfp-seed">${seedLabel}</span>
+      ${logoHTML}
+      <span class="cfp-team-name">${displayName}</span>
+      ${score != null ? `<span class="cfp-score">${score}</span>` : ""}
+      ${isWinner ? `<span class="cfp-win-mark">&#10003;</span>` : ""}
+    </div>`;
+  };
+
+  const makeCard = (slot) => {
+    const live = cfpLiveData[slot.id] || {};
+    const anyResult = live.winner;
+    const badgeHTML = live.completed
+      ? `<div class="cfp-badge cfp-badge-final">Final</div>`
+      : live.isLive
+      ? `<div class="cfp-badge cfp-badge-live"><span class="live-dot"></span>Live</div>`
+      : "";
+    return `<div class="cfp-matchup-card${anyResult ? " cfp-card-done" : ""}">
+      ${badgeHTML}
+      ${makeSlot(slot, "top", live)}
+      <div class="cfp-matchup-divider"></div>
+      ${makeSlot(slot, "bot", live)}
+      <div class="cfp-matchup-site">${slot.site}</div>
+    </div>`;
+  };
+
+  const colsHTML = CFP_BRACKET.map(col => `
+    <div class="cfp-bracket-col">
+      <div class="cfp-round-header">${col.round}<span class="cfp-round-date">${col.date}</span></div>
+      <div class="cfp-round-games">${col.games.map(makeCard).join("")}</div>
+    </div>`).join("");
+
+  container.innerHTML = `
+    ${!hasData ? `<p class="cfp-pending-notice">The 12-team bracket will be revealed once the regular season concludes in December 2026. Check back then to follow the full postseason!</p>` : ""}
+    <div class="cfp-bracket-wrap">${colsHTML}</div>`;
+}
+
+// ================================
+// PAGE TAB SWITCHING
+// ================================
+
+function switchToView(view) {
+  document.querySelectorAll(".page-tab").forEach(t =>
+    t.classList.toggle("active", t.dataset.view === view)
+  );
+  const scheduleEls = [
+    document.querySelector(".conf-browser"),
+    document.querySelector(".filters"),
+    document.querySelector("main"),
+  ];
+  const cfpSection = document.getElementById("cfpSection");
+  if (view === "schedule") {
+    scheduleEls.forEach(el => { if (el) el.style.display = ""; });
+    cfpSection.style.display = "none";
+  } else {
+    scheduleEls.forEach(el => { if (el) el.style.display = "none"; });
+    cfpSection.style.display = "block";
+    loadCFPBracket();
+  }
+}
+
+document.getElementById("pageTabs").addEventListener("click", function(e) {
+  const tab = e.target.closest(".page-tab");
+  if (tab && tab.dataset.view) switchToView(tab.dataset.view);
+});
+
+document.getElementById("cfpSection").addEventListener("click", function(e) {
+  if (e.target.closest(".cfp-refresh-btn")) refreshCFPBracket();
+});
+
+// ================================
 // SUPABASE — INIT
 // ================================
 

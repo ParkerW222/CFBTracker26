@@ -1257,3 +1257,287 @@ footer {
 
 .leaderboard-table tbody tr:first-child td { color: #fbbf24; }
 .leaderboard-table tr.leaderboard-me td   { color: #60a5fa; font-weight: 600; }
+
+/* ================================
+   PAGE TABS
+   ================================ */
+.page-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 24px 0;
+  background: #08081a;
+}
+
+.page-tab {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 9px 28px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #2a2a4a;
+  border-bottom: 2px solid #2a2a4a;
+  background: #0a0a1e;
+  color: #464680;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.page-tab.active {
+  background: #12122a;
+  color: #ffffff;
+  border-color: #3a3a6a;
+  border-bottom-color: #12122a;
+}
+
+.page-tab:hover:not(.active) {
+  color: #9098c8;
+  border-color: #32325a;
+}
+
+/* ================================
+   CFP SECTION
+   ================================ */
+.cfp-section {
+  background: #08081a;
+  padding: 0 24px 48px;
+}
+
+.cfp-section-hdr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 0 20px;
+  gap: 6px;
+}
+
+.cfp-section-title {
+  font-family: 'Black Ops One', sans-serif;
+  font-size: 26px;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.cfp-section-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #6670a0;
+  text-align: center;
+}
+
+.cfp-refresh-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6670a0;
+  background: #0d0d22;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-top: 4px;
+}
+
+.cfp-refresh-btn:hover {
+  color: #a0a8d8;
+  border-color: #3a3a5a;
+}
+
+.cfp-bracket-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.cfp-pending-notice {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #6670a0;
+  text-align: center;
+  padding: 4px 24px 20px;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ================================
+   BRACKET LAYOUT
+   ================================ */
+.cfp-bracket-wrap {
+  display: flex;
+  min-width: 760px;
+  padding: 4px 0 16px;
+}
+
+.cfp-bracket-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cfp-round-header {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #6670a0;
+  text-align: center;
+  padding: 0 8px 10px;
+}
+
+.cfp-round-date {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #3a3a5a;
+  letter-spacing: 0;
+  margin-top: 3px;
+  text-transform: none;
+}
+
+.cfp-round-games {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 0 6px;
+  min-height: 520px;
+}
+
+/* ================================
+   MATCHUP CARD
+   ================================ */
+.cfp-matchup-card {
+  background: #0d0d22;
+  border: 1px solid #22224a;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.cfp-matchup-card:hover {
+  border-color: #3a3a6a;
+}
+
+.cfp-matchup-card.cfp-card-done {
+  border-color: #1a3228;
+}
+
+.cfp-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-bottom: 1px solid #1a1a38;
+}
+
+.cfp-badge-final { color: #6670a0; background: transparent; }
+.cfp-badge-live  { color: #4ade80; background: rgba(74,222,128,0.06); }
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 1.2s infinite;
+}
+
+.cfp-team-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  transition: background 0.15s;
+}
+
+.cfp-team-slot.cfp-loser {
+  opacity: 0.38;
+}
+
+.cfp-team-slot.cfp-winner {
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.cfp-seed {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #3a3a60;
+  min-width: 18px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cfp-team-slot.cfp-winner .cfp-seed {
+  color: #4ade80;
+}
+
+.cfp-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.cfp-team-name {
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8890b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cfp-team-slot.cfp-winner .cfp-team-name {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cfp-score {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5058a0;
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cfp-team-slot.cfp-winner .cfp-score {
+  color: #4ade80;
+}
+
+.cfp-win-mark {
+  font-size: 10px;
+  color: #4ade80;
+  flex-shrink: 0;
+}
+
+.cfp-matchup-divider {
+  height: 1px;
+  background: #1a1a36;
+  margin: 0;
+}
+
+.cfp-matchup-site {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #3a3a58;
+  text-align: center;
+  padding: 4px 10px 6px;
+  letter-spacing: 0.2px;
+}

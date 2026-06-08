@@ -20,6 +20,22 @@
       <p>College Football Schedules &amp; Win Probability Predictions</p>
     </header>
 
+    <!-- PAGE TABS -->
+    <nav class="page-tabs" id="pageTabs">
+      <button class="page-tab active" data-view="schedule">&#128197; Schedule</button>
+      <button class="page-tab" data-view="playoff">&#127942; CFP Bracket</button>
+    </nav>
+
+    <!-- CFP PLAYOFF BRACKET (hidden by default) -->
+    <section id="cfpSection" class="cfp-section" style="display:none">
+      <div class="cfp-section-hdr">
+        <div class="cfp-section-title">2026 College Football Playoff</div>
+        <div class="cfp-section-sub">12-Team Bracket &mdash; Updates live during the postseason</div>
+        <button class="cfp-refresh-btn">&#8635; Refresh</button>
+      </div>
+      <div id="cfpBracketContainer" class="cfp-bracket-container"></div>
+    </section>
+
     <!-- CONFERENCE BROWSER: Click a conference, then a team -->
     <section class="conf-browser">
       <div class="conf-browser-inner">
