@@ -20,73 +20,6 @@
       <p>College Football Schedules &amp; Win Probability Predictions</p>
     </header>
 
-    <!-- LSU HERO: shown only when LSU is selected -->
-    <div id="lsuHero" class="lsu-hero" style="display:none">
-      <div class="lsu-hero-inner">
-
-        <!-- Left tiger claw scratches -->
-        <svg class="lsu-claws lsu-claws-left" viewBox="0 0 72 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <g fill="none" stroke-linecap="round">
-            <path d="M 8,4  C 2,55  16,105 4,155  C 0,178 6,205 8,218"  stroke="rgba(253,208,35,0.30)" stroke-width="3.8"/>
-            <path d="M 24,1 C 18,52 32,102 20,152 C 16,175 22,202 24,215" stroke="rgba(253,208,35,0.24)" stroke-width="3.2"/>
-            <path d="M 40,0 C 34,51 48,101 36,151 C 32,174 38,201 40,214" stroke="rgba(253,208,35,0.18)" stroke-width="2.8"/>
-            <path d="M 56,1 C 50,52 64,102 52,152 C 48,175 54,202 56,215" stroke="rgba(253,208,35,0.13)" stroke-width="2.2"/>
-          </g>
-        </svg>
-
-        <!-- Right tiger claw scratches (mirrored) -->
-        <svg class="lsu-claws lsu-claws-right" viewBox="0 0 72 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <g fill="none" stroke-linecap="round" transform="scale(-1,1) translate(-72,0)">
-            <path d="M 8,4  C 2,55  16,105 4,155  C 0,178 6,205 8,218"  stroke="rgba(253,208,35,0.30)" stroke-width="3.8"/>
-            <path d="M 24,1 C 18,52 32,102 20,152 C 16,175 22,202 24,215" stroke="rgba(253,208,35,0.24)" stroke-width="3.2"/>
-            <path d="M 40,0 C 34,51 48,101 36,151 C 32,174 38,201 40,214" stroke="rgba(253,208,35,0.18)" stroke-width="2.8"/>
-            <path d="M 56,1 C 50,52 64,102 52,152 C 48,175 54,202 56,215" stroke="rgba(253,208,35,0.13)" stroke-width="2.2"/>
-          </g>
-        </svg>
-
-        <img class="lsu-hero-logo" id="lsuHeroLogo" src="" alt="LSU Tigers">
-        <div class="lsu-tiger-container">
-          <div class="lsu-tiger-burst"></div>
-          <div class="lsu-hero-tiger">&#x1F42F;</div>
-        </div>
-        <div class="lsu-hero-title">Geaux Tigers</div>
-        <div class="lsu-hero-subtitle">Mike the Tiger &mdash; Tiger Stadium &mdash; Baton Rouge, LA</div>
-        <div class="lsu-hero-info">SEC &nbsp;&middot;&nbsp; Est. 1893 &nbsp;&middot;&nbsp; Capacity: 102,321</div>
-
-        <!-- National Championships -->
-        <div class="lsu-championships">
-          <div class="lsu-champ-label">&#127942; National Championships</div>
-          <div class="lsu-champ-years">
-            <span class="lsu-champ-badge">1908</span>
-            <span class="lsu-champ-badge">1935</span>
-            <span class="lsu-champ-badge">1958</span>
-            <span class="lsu-champ-badge">1961</span>
-            <span class="lsu-champ-badge lsu-champ-modern">2003</span>
-            <span class="lsu-champ-badge lsu-champ-modern">2007</span>
-            <span class="lsu-champ-badge lsu-champ-modern">2019</span>
-          </div>
-        </div>
-
-        <!-- MINI GAME -->
-        <div class="lsu-game-wrap">
-          <div class="lsu-game-hud">
-            <span class="lsu-game-label">&#127944; Evade the Rebels</span>
-            <div class="lsu-game-scores">
-              <span>Score&nbsp;<strong id="lsuGameScore">0</strong></span>
-              <span>Best&nbsp;<strong id="lsuGameBest">0</strong></span>
-            </div>
-          </div>
-          <canvas id="lsuGameCanvas" width="560" height="150"></canvas>
-        </div>
-
-        <div class="lsu-divider"></div>
-        <div class="lsu-legends-label">LSU Legends</div>
-        <div class="lsu-legends" id="lsuLegends"></div>
-
-        <button class="lsu-exit-btn" onclick="exitLSUModeBtn()">&#8592; All Teams</button>
-      </div>
-    </div>
-
     <!-- CONFERENCE BROWSER: Click a conference, then a team -->
     <section class="conf-browser">
       <div class="conf-browser-inner">
@@ -148,22 +81,6 @@
               <div class="stat-block" style="grid-column:1/-1"><div class="stat-label">Hometown</div><div class="stat-value" id="pcHometown"></div></div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LEGEND MODAL -->
-    <div id="legendModal" class="modal-overlay legend-modal-overlay">
-      <div class="legend-modal-card">
-        <button class="modal-close" id="legendModalClose">&times;</button>
-        <div class="legend-modal-photo-wrap">
-          <img class="legend-modal-photo" id="legendModalPhoto" src="" alt="">
-        </div>
-        <div class="legend-modal-body">
-          <div class="legend-modal-name"   id="legendModalName"></div>
-          <div class="legend-modal-meta"   id="legendModalMeta"></div>
-          <div class="legend-modal-award"  id="legendModalAward"></div>
-          <div class="legend-modal-detail" id="legendModalDetail"></div>
         </div>
       </div>
     </div>
