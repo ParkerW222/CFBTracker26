@@ -1380,6 +1380,7 @@ async function submitUsername() {
 }
 
 document.getElementById("usernameSubmit").addEventListener("click", submitUsername);
+document.getElementById("usernameSkip").addEventListener("click", closeUsernameModal);
 document.getElementById("usernameInput").addEventListener("keydown", function(e) {
   if (e.key === "Enter") submitUsername();
 });

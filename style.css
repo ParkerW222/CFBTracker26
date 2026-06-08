@@ -1187,6 +1187,21 @@ footer {
 
 .username-submit-btn:hover { opacity: 0.85; }
 
+.username-skip-btn {
+  display: block;
+  margin: 10px auto 0;
+  background: transparent;
+  border: none;
+  color: #6670a0;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px;
+}
+
+.username-skip-btn:hover { color: #a0a8c8; }
+
 
 /* ================================
    LEADERBOARD MODAL
