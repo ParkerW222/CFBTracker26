@@ -27,6 +27,9 @@ let teamMap    = {};
 let recordMap  = {}; // team → "W-L"
 let rankingMap = {}; // team → AP poll rank number
 
+const visibleColorCache = {}; // memoized visibleColor results keyed by team name
+const rosterHTMLCache   = {}; // memoized buildRosterHTML results keyed by team name
+
 // Players who left each team for 2026: { "LSU": Set("garrett nussmeier", ...) }
 let draftExits    = {};  // keyed by college team name
 let portalExits   = {};  // keyed by origin school name
@@ -586,14 +589,21 @@ function populateConfBrowser() {
 
 // Returns a team's primary color, falling back to altColor when the primary
 // is too dark to be visible against the page background (e.g. Iowa black).
-function visibleColor(info) {
+function visibleColor(info, teamName) {
+  if (teamName && visibleColorCache[teamName]) return visibleColorCache[teamName];
   const hex = (info.color || "#000000").replace("#", "");
-  if (hex.length !== 6) return info.altColor || info.color || "#8890a8";
-  const r = parseInt(hex.slice(0,2), 16);
-  const g = parseInt(hex.slice(2,4), 16);
-  const b = parseInt(hex.slice(4,6), 16);
-  const luminance = r * 0.299 + g * 0.587 + b * 0.114;
-  return luminance < 40 ? (info.altColor || "#8890a8") : (info.color || "#8890a8");
+  let result;
+  if (hex.length !== 6) {
+    result = info.altColor || info.color || "#8890a8";
+  } else {
+    const r = parseInt(hex.slice(0,2), 16);
+    const g = parseInt(hex.slice(2,4), 16);
+    const b = parseInt(hex.slice(4,6), 16);
+    const luminance = r * 0.299 + g * 0.587 + b * 0.114;
+    result = luminance < 40 ? (info.altColor || "#8890a8") : (info.color || "#8890a8");
+  }
+  if (teamName) visibleColorCache[teamName] = result;
+  return result;
 }
 
 // filterGames=true when triggered by a user click; false on initial page load
@@ -621,7 +631,7 @@ function showConfTeams(confName, filterGames = true) {
 
   grid.innerHTML = teams.map(team => {
     const info  = teamMap[team] || {};
-    const color = visibleColor(info);
+    const color = visibleColor(info, team);
     const frame = info.logo
       ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66">
            <img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'">
@@ -658,7 +668,7 @@ function showAllConfs() {
   if (grid) {
     grid.innerHTML = all.map(team => {
       const info  = teamMap[team] || {};
-      const color = visibleColor(info);
+      const color = visibleColor(info, team);
       const rank  = rankingMap[team];
       const isFav = favTeam === team;
       const safeT = team.replace(/"/g, "&quot;");
@@ -1209,26 +1219,30 @@ async function openRosterModal(home, away) {
 }
 
 function buildRosterHTML(players, team) {
+  if (rosterHTMLCache[team]) return rosterHTMLCache[team];
   if (!players || players.length === 0) {
     return `<p style="color:#6670a0;font-size:13px;">Roster not available.</p>`;
   }
 
+  // Tag each player with its original index once, avoiding O(n²) indexOf inside groups
+  const indexed = players.map((p, i) => ({ p, i }));
+
   const groups = {
-    "QB":             players.filter(p => p.position === "QB"),
-    "RB / FB":        players.filter(p => ["RB","FB"].includes(p.position)),
-    "WR / TE":        players.filter(p => ["WR","TE"].includes(p.position)),
-    "O-Line":         players.filter(p => ["OL","C","G","OG","OT","T"].includes(p.position)),
-    "D-Line":         players.filter(p => ["DE","DT","NT","DL"].includes(p.position)),
-    "Linebacker":     players.filter(p => ["LB","ILB","OLB","MLB"].includes(p.position)),
-    "Defensive Back": players.filter(p => ["CB","S","FS","SS","DB","NB","SAF"].includes(p.position)),
-    "Special Teams":  players.filter(p => ["K","P","LS","ATH","KR","PR"].includes(p.position)),
+    "QB":             indexed.filter(({p}) => p.position === "QB"),
+    "RB / FB":        indexed.filter(({p}) => ["RB","FB"].includes(p.position)),
+    "WR / TE":        indexed.filter(({p}) => ["WR","TE"].includes(p.position)),
+    "O-Line":         indexed.filter(({p}) => ["OL","C","G","OG","OT","T"].includes(p.position)),
+    "D-Line":         indexed.filter(({p}) => ["DE","DT","NT","DL"].includes(p.position)),
+    "Linebacker":     indexed.filter(({p}) => ["LB","ILB","OLB","MLB"].includes(p.position)),
+    "Defensive Back": indexed.filter(({p}) => ["CB","S","FS","SS","DB","NB","SAF"].includes(p.position)),
+    "Special Teams":  indexed.filter(({p}) => ["K","P","LS","ATH","KR","PR"].includes(p.position)),
   };
 
-  return Object.entries(groups)
+  const html = Object.entries(groups)
     .filter(([, list]) => list.length > 0)
     .map(([groupName, list]) => {
-      const sorted = list.sort((a, b) => (a.isTransfer ? 1 : 0) - (b.isTransfer ? 1 : 0) || (a.jersey ?? 99) - (b.jersey ?? 99));
-      const rows = sorted.map((p, i) => {
+      const sorted = list.sort(({p:a}, {p:b}) => (a.isTransfer ? 1 : 0) - (b.isTransfer ? 1 : 0) || (a.jersey ?? 99) - (b.jersey ?? 99));
+      const rows = sorted.map(({p, i}) => {
         const jersey = p.jersey != null ? `#${p.jersey}` : "—";
         const name   = `${p.firstName} ${p.lastName}`;
         const yr     = formatYear(p.year);
@@ -1240,9 +1254,8 @@ function buildRosterHTML(players, team) {
           : p.isTransfer
           ? `<span class="transfer-badge">${"★".repeat(Math.min(p.stars || 0, 5))} from ${p.origin}</span>`
           : "";
-        const globalIdx = players.indexOf(p);
         return `
-          <div class="player-row clickable-player" data-team="${team}" data-idx="${globalIdx}">
+          <div class="player-row clickable-player" data-team="${team}" data-idx="${i}">
             <span class="player-jersey">${jersey}</span>
             <span class="player-name">${name}${xfer}</span>
             <span class="player-meta">${meta}</span>
@@ -1255,6 +1268,9 @@ function buildRosterHTML(players, team) {
           ${rows}
         </div>`;
     }).join("");
+
+  rosterHTMLCache[team] = html;
+  return html;
 }
 
 function formatHeight(inches) {
