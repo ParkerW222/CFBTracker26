@@ -8,6 +8,17 @@ const API_KEY = "yZG44X3xOS8pzlXjCvSNroLvpyEVCAFPj1ujNaGkbyPjQSxZAz7cgPKFR9zOPC8
 const CFBD_BASE = "https://api.collegefootballdata.com";
 const SEASON = 2026;
 
+// ================================
+// SUPABASE CONFIG
+// ================================
+const SUPABASE_URL = "https://ummxinutjqirhxffkuno.supabase.co";
+const SUPABASE_KEY = "sb_publishable_V4bOQU1C_IC3DhsuyCV0QQ_GABP9ZsM";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUsername = localStorage.getItem("cfb_username") || null;
+let userPicks = {};
+let favTeam   = localStorage.getItem("cfb_favteam") || null;
+
 // Holds all fetched games so filters can run without re-fetching
 let allGames = [];
 
@@ -618,8 +629,11 @@ function showConfTeams(confName, filterGames = true) {
       : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
     const rank   = rankingMap[team];
     const record = recordMap[team] || "0-0";
+    const isFav  = favTeam === team;
+    const safeT  = team.replace(/"/g, "&quot;");
     return `
-      <div class="conf-team-item" data-team="${team.replace(/"/g, '&quot;')}">
+      <div class="conf-team-item${isFav ? " fav-team" : ""}" data-team="${safeT}">
+        <button class="fav-star-btn${isFav ? " active" : ""}" data-fav="${safeT}" title="Set as favorite">&#9733;</button>
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -646,10 +660,13 @@ function showAllConfs() {
       const info  = teamMap[team] || {};
       const color = visibleColor(info);
       const rank  = rankingMap[team];
+      const isFav = favTeam === team;
+      const safeT = team.replace(/"/g, "&quot;");
       const frame = info.logo
         ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"><img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'"></div>`
         : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
-      return `<div class="conf-team-item" data-team="${team.replace(/"/g, '&quot;')}">
+      return `<div class="conf-team-item${isFav ? " fav-team" : ""}" data-team="${safeT}">
+        <button class="fav-star-btn${isFav ? " active" : ""}" data-fav="${safeT}" title="Set as favorite">&#9733;</button>
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -1155,6 +1172,42 @@ function populateTeamFilter(gameList) {
 // statistical win probability.
 // ================================
 
+function buildPickHTML(game) {
+  if (!currentUsername) {
+    return `<div class="pick-section pick-cta">
+      <button class="pick-cta-btn">Set a username to make picks</button>
+    </div>`;
+  }
+  const existing = userPicks[game.gameId];
+  if (game.isLive) {
+    return existing
+      ? `<div class="pick-section"><span class="pick-label">Your pick:</span> <span class="pick-made">${existing}</span></div>`
+      : `<div class="pick-section pick-locked">Game in progress</div>`;
+  }
+  if (game.isCompleted) {
+    if (!existing) return `<div class="pick-section pick-locked">Game over — pick window closed</div>`;
+    const winner  = game.homePoints > game.awayPoints ? game.home : game.away;
+    const correct = existing === winner;
+    return `<div class="pick-section">
+      <span class="pick-label">Your pick:</span>
+      <span class="pick-made ${correct ? "pick-correct" : "pick-wrong"}">${existing} ${correct ? "✓" : "✗"}</span>
+    </div>`;
+  }
+  const safeHome = game.home.replace(/"/g, "&quot;");
+  const safeAway = game.away.replace(/"/g, "&quot;");
+  return `<div class="pick-section">
+    <span class="pick-label">Pick winner:</span>
+    <div class="pick-buttons">
+      <button class="pick-btn${existing === game.away ? " picked" : ""}"
+              data-game-id="${game.gameId}" data-pick="${safeAway}"
+              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}">${game.away}</button>
+      <button class="pick-btn${existing === game.home ? " picked" : ""}"
+              data-game-id="${game.gameId}" data-pick="${safeHome}"
+              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}">${game.home}</button>
+    </div>
+  </div>`;
+}
+
 function displayGames(gameList) {
   const container = document.getElementById("gamesContainer");
 
@@ -1329,6 +1382,7 @@ function displayGames(gameList) {
         </div>
         <div class="game-info">📅 ${game.date} &nbsp;|&nbsp; 📍 ${game.location}</div>
         ${resultHTML}
+        ${buildPickHTML(game)}
       </div>
     `;
   }).join("");
@@ -1442,8 +1496,21 @@ document.getElementById("confTabs").addEventListener("click", function(e) {
 // Team logo grid — delegate clicks so team names with apostrophes (e.g. Hawai'i)
 // are handled safely via data attributes instead of inline onclick strings.
 document.getElementById("confTeamGrid").addEventListener("click", function(e) {
+  const starBtn = e.target.closest(".fav-star-btn");
+  if (starBtn) { setFavTeam(starBtn.dataset.fav); return; }
   const item = e.target.closest(".conf-team-item");
   if (item && item.dataset.team) filterToTeam(item.dataset.team);
+});
+
+// Pick buttons on game cards
+document.getElementById("gamesContainer").addEventListener("click", function(e) {
+  const pickBtn = e.target.closest(".pick-btn");
+  if (pickBtn) {
+    submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
+               pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week));
+    return;
+  }
+  if (e.target.closest(".pick-cta-btn")) { openUsernameModal(); return; }
 });
 
 // Open roster modal when any matchup is clicked (event delegation)
@@ -1689,7 +1756,11 @@ document.getElementById("rosterModal").addEventListener("click", function(e) {
 });
 document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") {
-    if (document.getElementById("legendModal").classList.contains("open")) {
+    if (document.getElementById("usernameModal").classList.contains("open")) {
+      closeUsernameModal();
+    } else if (document.getElementById("leaderboardModal").classList.contains("open")) {
+      closeLeaderboard();
+    } else if (document.getElementById("legendModal").classList.contains("open")) {
       closeLegendModal();
     } else if (document.getElementById("playerModal").classList.contains("open")) {
       closePlayerModal();
@@ -1748,3 +1819,157 @@ document.getElementById("playerModalClose").addEventListener("click", closePlaye
 document.getElementById("playerModal").addEventListener("click", function(e) {
   if (e.target === this) closePlayerModal();
 });
+
+
+// ================================
+// SUPABASE — USERNAME
+// ================================
+
+function openUsernameModal() {
+  document.getElementById("usernameModal").classList.add("open");
+  setTimeout(() => document.getElementById("usernameInput").focus(), 50);
+}
+
+function closeUsernameModal() {
+  document.getElementById("usernameModal").classList.remove("open");
+}
+
+async function submitUsername() {
+  const input = document.getElementById("usernameInput");
+  const err   = document.getElementById("usernameError");
+  const val   = input.value.trim();
+  if (val.length < 2) { err.textContent = "Must be at least 2 characters."; return; }
+  err.textContent = "";
+  currentUsername = val;
+  localStorage.setItem("cfb_username", val);
+  await sb.from("user_prefs").upsert({ username: val, favorite_team: favTeam }, { onConflict: "username" });
+  closeUsernameModal();
+  await loadUserPicks();
+  applyFilters();
+}
+
+document.getElementById("usernameSubmit").addEventListener("click", submitUsername);
+document.getElementById("usernameInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") submitUsername();
+});
+
+
+// ================================
+// SUPABASE — PICKS
+// ================================
+
+async function loadUserPicks() {
+  if (!currentUsername) return;
+  const { data } = await sb.from("picks").select("game_id, picked_team").eq("username", currentUsername);
+  if (data) { userPicks = {}; data.forEach(p => { userPicks[p.game_id] = p.picked_team; }); }
+}
+
+async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week) {
+  if (!currentUsername) { openUsernameModal(); return; }
+  userPicks[gameId] = pickedTeam;
+  applyFilters();
+  await sb.from("picks").upsert({
+    username: currentUsername, game_id: gameId, picked_team: pickedTeam,
+    home_team: homeTeam, away_team: awayTeam, week, season: SEASON
+  }, { onConflict: "username,game_id" });
+}
+
+
+// ================================
+// SUPABASE — FAVORITES
+// ================================
+
+async function setFavTeam(team) {
+  if (!currentUsername) { openUsernameModal(); return; }
+  favTeam = favTeam === team ? null : team;
+  localStorage.setItem("cfb_favteam", favTeam || "");
+  if (activeConf === "__all__") showAllConfs();
+  else showConfTeams(activeConf, false);
+  await sb.from("user_prefs").upsert(
+    { username: currentUsername, favorite_team: favTeam },
+    { onConflict: "username" }
+  );
+}
+
+
+// ================================
+// SUPABASE — LEADERBOARD
+// ================================
+
+async function openLeaderboard() {
+  const modal   = document.getElementById("leaderboardModal");
+  const content = document.getElementById("leaderboardContent");
+  modal.classList.add("open");
+  content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">Loading…</p>`;
+
+  const { data: picks } = await sb.from("picks").select("username, game_id, picked_team").eq("season", SEASON);
+  if (!picks || picks.length === 0) {
+    content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No picks yet — be the first!</p>`;
+    return;
+  }
+
+  const completedMap = {};
+  allGames.filter(g => g.isCompleted).forEach(g => {
+    completedMap[g.gameId] = g.homePoints > g.awayPoints ? g.home : g.away;
+  });
+
+  const scores = {};
+  picks.forEach(p => {
+    if (!scores[p.username]) scores[p.username] = { correct: 0, total: 0 };
+    const winner = completedMap[p.game_id];
+    if (winner) { scores[p.username].total++; if (p.picked_team === winner) scores[p.username].correct++; }
+  });
+
+  const sorted = Object.entries(scores)
+    .filter(([, s]) => s.total > 0)
+    .sort(([, a], [, b]) => b.correct - a.correct || b.total - a.total);
+
+  if (sorted.length === 0) {
+    content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No completed games yet — check back once the season starts!</p>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <table class="leaderboard-table">
+      <thead><tr><th>#</th><th>Username</th><th>Correct</th><th>Total</th><th>%</th></tr></thead>
+      <tbody>
+        ${sorted.slice(0, 20).map(([username, s], i) => {
+          const pct  = s.total ? Math.round(s.correct / s.total * 100) : 0;
+          const isMe = username === currentUsername;
+          return `<tr class="${isMe ? "leaderboard-me" : ""}">
+            <td>${i + 1}</td><td>${username}</td><td>${s.correct}</td><td>${s.total}</td><td>${pct}%</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`;
+}
+
+function closeLeaderboard() {
+  document.getElementById("leaderboardModal").classList.remove("open");
+}
+
+document.getElementById("leaderboardBtn").addEventListener("click", openLeaderboard);
+document.getElementById("leaderboardModalClose").addEventListener("click", closeLeaderboard);
+document.getElementById("leaderboardModal").addEventListener("click", function(e) {
+  if (e.target === this) closeLeaderboard();
+});
+
+
+// ================================
+// SUPABASE — INIT
+// ================================
+
+async function initSupabase() {
+  if (!currentUsername) {
+    setTimeout(openUsernameModal, 1200);
+  } else {
+    await loadUserPicks();
+    const { data } = await sb.from("user_prefs").select("favorite_team").eq("username", currentUsername).single();
+    if (data && data.favorite_team) {
+      favTeam = data.favorite_team;
+      localStorage.setItem("cfb_favteam", favTeam);
+    }
+  }
+}
+
+initSupabase();

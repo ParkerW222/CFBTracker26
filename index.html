@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
 
   <body>
@@ -119,6 +120,7 @@
       </select>
 
       <button id="exportBtn" class="export-btn">&#8595; Export CSV</button>
+      <button id="leaderboardBtn" class="leaderboard-btn">&#127942; Leaderboard</button>
     </section>
 
     <!-- GAMES GRID -->
@@ -163,6 +165,26 @@
           <div class="legend-modal-award"  id="legendModalAward"></div>
           <div class="legend-modal-detail" id="legendModalDetail"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- USERNAME MODAL -->
+    <div id="usernameModal" class="modal-overlay username-modal-overlay">
+      <div class="username-modal-card">
+        <div class="username-modal-title">Welcome to CFB Tracker 2026</div>
+        <div class="username-modal-sub">Enter a username to make picks and appear on the leaderboard</div>
+        <input type="text" id="usernameInput" class="username-input" placeholder="Enter username…" maxlength="20" autocomplete="off">
+        <div id="usernameError" class="username-error"></div>
+        <button id="usernameSubmit" class="username-submit-btn">Let's Go</button>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD MODAL -->
+    <div id="leaderboardModal" class="modal-overlay leaderboard-modal-overlay">
+      <div class="leaderboard-modal-card">
+        <button class="modal-close" id="leaderboardModalClose">&times;</button>
+        <div class="leaderboard-title">&#127942; Pick'em Leaderboard</div>
+        <div id="leaderboardContent"></div>
       </div>
     </div>
 

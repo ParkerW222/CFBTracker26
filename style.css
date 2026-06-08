@@ -686,6 +686,7 @@ body.lsu-mode footer {
 }
 
 .conf-team-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1542,3 +1543,278 @@ footer {
   border-top: 1px solid #1a1a30;
   margin-top: 40px;
 }
+
+
+/* ================================
+   PICK'EM
+   ================================ */
+
+.pick-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 16px 12px;
+  border-top: 1px solid #1a1a30;
+  margin-top: 4px;
+}
+
+.pick-label {
+  color: #6670a0;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+.pick-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pick-btn {
+  background: #1a1a30;
+  border: 1px solid #2a2a4a;
+  border-radius: 5px;
+  color: #a0a8c8;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pick-btn:hover {
+  background: #2a2a4a;
+  color: #ffffff;
+}
+
+.pick-btn.picked {
+  background: #1a3a6a;
+  border-color: #4466aa;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.pick-made {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a0a8d0;
+}
+
+.pick-correct { color: #4ade80; }
+.pick-wrong   { color: #f87171; }
+
+.pick-locked {
+  color: #6670a0;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+}
+
+.pick-cta { justify-content: center; }
+
+.pick-cta-btn {
+  background: transparent;
+  border: 1px dashed #3a3a5a;
+  border-radius: 5px;
+  color: #6670a0;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pick-cta-btn:hover {
+  color: #a0a8d0;
+  border-color: #6670a0;
+}
+
+
+/* ================================
+   LEADERBOARD BUTTON
+   ================================ */
+
+.leaderboard-btn {
+  background: linear-gradient(135deg, #1a3a6a, #0f2550);
+  border: 1px solid #2a4a8a;
+  border-radius: 8px;
+  color: #c0d0f0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.leaderboard-btn:hover { opacity: 0.85; }
+
+
+/* ================================
+   FAVORITE STAR
+   ================================ */
+
+.fav-star-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: transparent;
+  border: none;
+  color: #3a3a5a;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+  transition: color 0.15s, transform 0.15s;
+  z-index: 2;
+}
+
+.fav-star-btn:hover {
+  color: #fbbf24;
+  transform: scale(1.25);
+}
+
+.fav-star-btn.active { color: #fbbf24; }
+
+.conf-team-item.fav-team {
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+  border-color: rgba(251, 191, 36, 0.45) !important;
+}
+
+
+/* ================================
+   USERNAME MODAL
+   ================================ */
+
+.username-modal-overlay.open {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.username-modal-card {
+  background: #12122a;
+  border: 1px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.username-modal-title {
+  font-family: 'Black Ops One', sans-serif;
+  font-size: 21px;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.username-modal-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #6670a0;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.username-input {
+  width: 100%;
+  background: #1a1a30;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.username-input:focus {
+  outline: none;
+  border-color: #4466aa;
+}
+
+.username-error {
+  color: #f87171;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  min-height: 18px;
+  margin-bottom: 8px;
+}
+
+.username-submit-btn {
+  background: linear-gradient(135deg, #e8374d, #c01a30);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.username-submit-btn:hover { opacity: 0.85; }
+
+
+/* ================================
+   LEADERBOARD MODAL
+   ================================ */
+
+.leaderboard-modal-overlay.open {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaderboard-modal-card {
+  background: #12122a;
+  border: 1px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.leaderboard-title {
+  font-family: 'Black Ops One', sans-serif;
+  font-size: 20px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.leaderboard-table th {
+  color: #6670a0;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-bottom: 1px solid #2a2a4a;
+  text-align: left;
+}
+
+.leaderboard-table td {
+  color: #c0c0d0;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1a1a30;
+}
+
+.leaderboard-table tbody tr:first-child td { color: #fbbf24; }
+.leaderboard-table tr.leaderboard-me td   { color: #60a5fa; font-weight: 600; }
