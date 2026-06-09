@@ -1397,7 +1397,8 @@ async function createAccount() {
   const { data: existing } = await sb.from("user_prefs").select("username").eq("username", username).maybeSingle();
   if (existing)               { err.textContent = "That username is already taken."; return; }
   const pinHash = await sha256(pin);
-  await sb.from("user_prefs").insert({ username, pin_hash: pinHash });
+  const { error } = await sb.from("user_prefs").insert({ username, pin_hash: pinHash });
+  if (error) { err.textContent = "Could not create account. Try again."; console.error(error); return; }
   await finishLogin(username);
 }
 
