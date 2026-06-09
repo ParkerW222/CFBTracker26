@@ -1500,8 +1500,12 @@ async function openLeaderboard() {
   });
 
   lbSorted = Object.entries(scores)
-    .filter(([, s]) => s.total > 0)
-    .sort(([, a], [, b]) => b.points - a.points || (b.correct / b.total) - (a.correct / a.total));
+    .filter(([, s]) => s.total >= 5)
+    .sort(([, a], [, b]) => {
+      const avgA = a.points / a.total;
+      const avgB = b.points / b.total;
+      return avgB - avgA || b.points - a.points;
+    });
 
   renderLeaderboardTable();
 }
@@ -1513,17 +1517,19 @@ function renderLeaderboardTable() {
     return;
   }
   content.innerHTML = `
+    <div class="lb-ranking-note">Ranked by avg pts/pick &mdash; minimum 5 picks to qualify</div>
     <table class="leaderboard-table">
-      <thead><tr><th>#</th><th>Username</th><th>Points</th><th>Record</th><th>%</th></tr></thead>
+      <thead><tr><th>#</th><th>Username</th><th>Avg</th><th>Total</th><th>Record</th><th>%</th></tr></thead>
       <tbody>
         ${lbSorted.slice(0, 20).map(([username, s], i) => {
           const isMe   = username === currentUsername;
-          const ptsStr = s.points > 0 ? `+${s.points}` : `${s.points}`;
-          const pct    = s.total ? Math.round(s.correct / s.total * 100) : 0;
+          const avg    = (s.points / s.total).toFixed(1);
+          const pct    = Math.round(s.correct / s.total * 100);
           return `<tr class="${isMe ? "leaderboard-me" : ""}">
             <td>${i + 1}</td>
             <td><button class="lb-username-btn" data-username="${username}">${username}</button></td>
-            <td class="lb-pts">${ptsStr}</td>
+            <td class="lb-pts">${avg}</td>
+            <td>${s.points}</td>
             <td>${s.correct}–${s.total - s.correct}</td>
             <td>${pct}%</td>
           </tr>`;

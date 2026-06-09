@@ -1044,6 +1044,14 @@ footer {
   color: #e2e8f0;
 }
 
+.lb-ranking-note {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #464680;
+  text-align: center;
+  padding: 0 0 10px;
+}
+
 .lb-username-btn {
   background: none;
   border: none;
