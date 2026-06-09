@@ -703,7 +703,7 @@ function filterToTeam(team) {
 // win_prob is 0–100 (probability of the picked team winning pregame).
 function calcPickPoints(correct, winProb) {
   const wp = (winProb != null && !isNaN(winProb)) ? winProb : 50;
-  return correct ? Math.round((100 - wp) / 10) + 1 : -(Math.round(wp / 10) + 1);
+  return correct ? Math.round((100 - wp) / 10) + 1 : 0;
 }
 
 function buildPickHTML(game) {
@@ -1497,7 +1497,7 @@ async function openLeaderboard() {
 
   const sorted = Object.entries(scores)
     .filter(([, s]) => s.total > 0)
-    .sort(([, a], [, b]) => b.points - a.points);
+    .sort(([, a], [, b]) => b.points - a.points || (b.correct / b.total) - (a.correct / a.total));
 
   if (sorted.length === 0) {
     content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No completed games yet — check back once the season starts!</p>`;
