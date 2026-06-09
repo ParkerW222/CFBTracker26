@@ -1187,6 +1187,52 @@ footer {
 
 .username-submit-btn:hover { opacity: 0.85; }
 
+.pin-input {
+  width: 100%;
+  background: #1a1a30;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  letter-spacing: 3px;
+}
+
+.pin-input:focus {
+  outline: none;
+  border-color: #4466aa;
+}
+
+.pin-input::placeholder {
+  letter-spacing: 0;
+  color: #3a3a60;
+}
+
+.username-login-btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  border: 1px solid #3a3a6a;
+  background: transparent;
+  color: #8890c8;
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.username-login-btn:hover {
+  color: #ffffff;
+  border-color: #6670a0;
+  background: rgba(255,255,255,0.04);
+}
+
 .username-skip-btn {
   display: block;
   margin: 10px auto 0;

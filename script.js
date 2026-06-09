@@ -1358,6 +1358,7 @@ document.getElementById("playerModal").addEventListener("click", function(e) {
 
 function openUsernameModal() {
   document.getElementById("usernameModal").classList.add("open");
+  document.getElementById("usernameError").textContent = "";
   setTimeout(() => document.getElementById("usernameInput").focus(), 50);
 }
 
@@ -1365,24 +1366,66 @@ function closeUsernameModal() {
   document.getElementById("usernameModal").classList.remove("open");
 }
 
-async function submitUsername() {
-  const input = document.getElementById("usernameInput");
-  const err   = document.getElementById("usernameError");
-  const val   = input.value.trim();
-  if (val.length < 2) { err.textContent = "Must be at least 2 characters."; return; }
-  err.textContent = "";
-  currentUsername = val;
-  localStorage.setItem("cfb_username", val);
-  await sb.from("user_prefs").upsert({ username: val, favorite_team: favTeam }, { onConflict: "username" });
+async function sha256(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function finishLogin(username, savedFavTeam) {
+  currentUsername = username;
+  localStorage.setItem("cfb_username", username);
+  if (savedFavTeam) {
+    favTeam = savedFavTeam;
+    localStorage.setItem("cfb_favteam", savedFavTeam);
+  }
   closeUsernameModal();
   await loadUserPicks();
   applyFilters();
 }
 
-document.getElementById("usernameSubmit").addEventListener("click", submitUsername);
+async function createAccount() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const pin      = document.getElementById("pinInput").value.trim();
+  const err      = document.getElementById("usernameError");
+  err.textContent = "";
+  if (username.length < 2)    { err.textContent = "Username must be at least 2 characters."; return; }
+  if (!/^\d{4,6}$/.test(pin)) { err.textContent = "PIN must be 4–6 digits."; return; }
+  const { data: existing } = await sb.from("user_prefs").select("username").eq("username", username).maybeSingle();
+  if (existing)               { err.textContent = "That username is already taken."; return; }
+  const pinHash = await sha256(pin);
+  await sb.from("user_prefs").insert({ username, pin_hash: pinHash });
+  await finishLogin(username, null);
+}
+
+async function loginWithPin() {
+  const username = document.getElementById("usernameInput").value.trim();
+  const pin      = document.getElementById("pinInput").value.trim();
+  const err      = document.getElementById("usernameError");
+  err.textContent = "";
+  if (!username) { err.textContent = "Enter your username."; return; }
+  if (!pin)      { err.textContent = "Enter your PIN."; return; }
+  const { data } = await sb.from("user_prefs").select("pin_hash, favorite_team").eq("username", username).maybeSingle();
+  if (!data)     { err.textContent = "Username not found — create an account first."; return; }
+  if (!data.pin_hash) {
+    // Legacy account (no PIN yet) — let them set one now
+    const pinHash = await sha256(pin);
+    await sb.from("user_prefs").update({ pin_hash: pinHash }).eq("username", username);
+    await finishLogin(username, data.favorite_team);
+    return;
+  }
+  const pinHash = await sha256(pin);
+  if (pinHash !== data.pin_hash) { err.textContent = "Incorrect PIN."; return; }
+  await finishLogin(username, data.favorite_team);
+}
+
+document.getElementById("createAccountBtn").addEventListener("click", createAccount);
+document.getElementById("loginBtn").addEventListener("click", loginWithPin);
 document.getElementById("usernameSkip").addEventListener("click", closeUsernameModal);
 document.getElementById("usernameInput").addEventListener("keydown", function(e) {
-  if (e.key === "Enter") submitUsername();
+  if (e.key === "Enter") document.getElementById("pinInput").focus();
+});
+document.getElementById("pinInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") createAccount();
 });
 
 
@@ -1668,16 +1711,15 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (!currentUsername) {
-    setTimeout(openUsernameModal, 1200);
-  } else {
+  if (currentUsername) {
     await loadUserPicks();
-    const { data } = await sb.from("user_prefs").select("favorite_team").eq("username", currentUsername).single();
+    const { data } = await sb.from("user_prefs").select("favorite_team").eq("username", currentUsername).maybeSingle();
     if (data && data.favorite_team) {
       favTeam = data.favorite_team;
       localStorage.setItem("cfb_favteam", favTeam);
     }
   }
+  // Modal only opens when user tries to make a pick or set a favorite — not on page load
 }
 
 initSupabase();

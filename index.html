@@ -104,11 +104,13 @@
     <!-- USERNAME MODAL -->
     <div id="usernameModal" class="modal-overlay username-modal-overlay">
       <div class="username-modal-card">
-        <div class="username-modal-title">Welcome to CFB Tracker 2026</div>
-        <div class="username-modal-sub">Enter a username to make picks and appear on the leaderboard</div>
-        <input type="text" id="usernameInput" class="username-input" placeholder="Enter username…" maxlength="20" autocomplete="off">
+        <div class="username-modal-title">CFB Tracker 2026</div>
+        <div class="username-modal-sub">Create an account or log in to make picks and join the leaderboard</div>
+        <input type="text" id="usernameInput" class="username-input" placeholder="Username…" maxlength="20" autocomplete="off">
+        <input type="password" id="pinInput" class="pin-input" placeholder="PIN (4–6 digits)…" maxlength="6" inputmode="numeric" autocomplete="off">
         <div id="usernameError" class="username-error"></div>
-        <button id="usernameSubmit" class="username-submit-btn">Let's Go</button>
+        <button id="createAccountBtn" class="username-submit-btn">Create Account</button>
+        <button id="loginBtn" class="username-login-btn">Log In</button>
         <button id="usernameSkip" class="username-skip-btn">Skip for now</button>
       </div>
     </div>
