@@ -1506,13 +1506,14 @@ async function openLeaderboard() {
 
   content.innerHTML = `
     <table class="leaderboard-table">
-      <thead><tr><th>#</th><th>Username</th><th>Points</th><th>Record</th></tr></thead>
+      <thead><tr><th>#</th><th>Username</th><th>Points</th><th>Record</th><th>%</th></tr></thead>
       <tbody>
         ${sorted.slice(0, 20).map(([username, s], i) => {
           const isMe   = username === currentUsername;
           const ptsStr = s.points > 0 ? `+${s.points}` : `${s.points}`;
+          const pct    = s.total ? Math.round(s.correct / s.total * 100) : 0;
           return `<tr class="${isMe ? "leaderboard-me" : ""}">
-            <td>${i + 1}</td><td>${username}</td><td class="lb-pts">${ptsStr}</td><td>${s.correct}–${s.total - s.correct}</td>
+            <td>${i + 1}</td><td>${username}</td><td class="lb-pts">${ptsStr}</td><td>${s.correct}–${s.total - s.correct}</td><td>${pct}%</td>
           </tr>`;
         }).join("")}
       </tbody>
