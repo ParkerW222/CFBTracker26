@@ -1388,48 +1388,63 @@ async function finishLogin(username) {
 }
 
 async function createAccount() {
-  const username = document.getElementById("usernameInput").value.trim();
-  const pin      = document.getElementById("pinInput").value.trim();
-  const err      = document.getElementById("usernameError");
+  const username  = document.getElementById("usernameInput").value.trim();
+  const password  = document.getElementById("passwordInput").value;
+  const password2 = document.getElementById("passwordInput2").value;
+  const err       = document.getElementById("usernameError");
   err.textContent = "";
   if (username.length < 2)    { err.textContent = "Username must be at least 2 characters."; return; }
-  if (!/^\d{4,6}$/.test(pin)) { err.textContent = "PIN must be 4–6 digits."; return; }
-  const { data: existing } = await sb.from("user_prefs").select("username").eq("username", username).maybeSingle();
+  if (password.length < 4)    { err.textContent = "Password must be at least 4 characters."; return; }
+  if (password !== password2) { err.textContent = "Passwords do not match."; return; }
+  const { data: existing } = await sb.from("accounts").select("username").eq("username", username).maybeSingle();
   if (existing)               { err.textContent = "That username is already taken."; return; }
-  const pinHash = await sha256(pin);
-  const { error } = await sb.from("user_prefs").insert({ username, pin_hash: pinHash });
+  const hash = await sha256(password);
+  const { error } = await sb.from("accounts").insert({ username, password_hash: hash });
   if (error) { err.textContent = error.message; return; }
   await finishLogin(username);
 }
 
-async function loginWithPin() {
+async function loginWithPassword() {
   const username = document.getElementById("usernameInput").value.trim();
-  const pin      = document.getElementById("pinInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
   const err      = document.getElementById("usernameError");
   err.textContent = "";
   if (!username) { err.textContent = "Enter your username."; return; }
-  if (!pin)      { err.textContent = "Enter your PIN."; return; }
-  const { data } = await sb.from("user_prefs").select("pin_hash").eq("username", username).maybeSingle();
+  if (!password) { err.textContent = "Enter your password."; return; }
+  const { data } = await sb.from("accounts").select("password_hash").eq("username", username).maybeSingle();
   if (!data)     { err.textContent = "Username not found — create an account first."; return; }
-  if (!data.pin_hash) {
-    // Legacy account (no PIN yet) — let them set one now
-    const pinHash = await sha256(pin);
-    await sb.from("user_prefs").update({ pin_hash: pinHash }).eq("username", username);
-    await finishLogin(username);
-    return;
-  }
-  const pinHash = await sha256(pin);
-  if (pinHash !== data.pin_hash) { err.textContent = "Incorrect PIN."; return; }
+  const hash = await sha256(password);
+  if (hash !== data.password_hash) { err.textContent = "Incorrect password."; return; }
   await finishLogin(username);
 }
 
-document.getElementById("createAccountBtn").addEventListener("click", createAccount);
-document.getElementById("loginBtn").addEventListener("click", loginWithPin);
+let authMode = "create";
+function setAuthMode(mode) {
+  authMode = mode;
+  const isCreate = mode === "create";
+  document.getElementById("passwordInput2").style.display = isCreate ? "" : "none";
+  document.getElementById("usernameSubmit").textContent   = isCreate ? "Create Account" : "Log In";
+  document.getElementById("authToggleBtn").textContent    = isCreate ? "Already have an account? Log In" : "New here? Create Account";
+  document.getElementById("usernameError").textContent    = "";
+}
+
+document.getElementById("usernameSubmit").addEventListener("click", function() {
+  if (authMode === "create") createAccount(); else loginWithPassword();
+});
+document.getElementById("authToggleBtn").addEventListener("click", function() {
+  setAuthMode(authMode === "create" ? "login" : "create");
+});
 document.getElementById("usernameSkip").addEventListener("click", closeUsernameModal);
 document.getElementById("usernameInput").addEventListener("keydown", function(e) {
-  if (e.key === "Enter") document.getElementById("pinInput").focus();
+  if (e.key === "Enter") document.getElementById("passwordInput").focus();
 });
-document.getElementById("pinInput").addEventListener("keydown", function(e) {
+document.getElementById("passwordInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    if (authMode === "create") document.getElementById("passwordInput2").focus();
+    else loginWithPassword();
+  }
+});
+document.getElementById("passwordInput2").addEventListener("keydown", function(e) {
   if (e.key === "Enter") createAccount();
 });
 
@@ -1789,16 +1804,7 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (!currentUsername) return;
-  // Verify the stored username has a PIN — accounts created before PIN was added
-  // won't have one, so clear localStorage and let them register properly on next pick.
-  const { data } = await sb.from("user_prefs").select("pin_hash").eq("username", currentUsername).maybeSingle();
-  if (!data || !data.pin_hash) {
-    currentUsername = null;
-    localStorage.removeItem("cfb_username");
-    return;
-  }
-  await loadUserPicks();
+  if (currentUsername) await loadUserPicks();
 }
 
 initSupabase();
