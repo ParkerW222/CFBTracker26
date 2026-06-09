@@ -16,8 +16,8 @@ const SUPABASE_KEY = "sb_publishable_V4bOQU1C_IC3DhsuyCV0QQ_GABP9ZsM";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUsername = localStorage.getItem("cfb_username") || null;
-let userPicks = {};
-let favTeam   = localStorage.getItem("cfb_favteam") || null;
+let userPicks     = {};
+let userPickProbs = {}; // gameId → win probability (0-100) of picked team at pick time
 
 // Holds all fetched games so filters can run without re-fetching
 let allGames = [];
@@ -639,11 +639,9 @@ function showConfTeams(confName, filterGames = true) {
       : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
     const rank   = rankingMap[team];
     const record = recordMap[team] || "0-0";
-    const isFav  = favTeam === team;
     const safeT  = team.replace(/"/g, "&quot;");
     return `
-      <div class="conf-team-item${isFav ? " fav-team" : ""}" data-team="${safeT}">
-        <button class="fav-star-btn${isFav ? " active" : ""}" data-fav="${safeT}" title="Set as favorite">&#9733;</button>
+      <div class="conf-team-item" data-team="${safeT}">
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -670,13 +668,11 @@ function showAllConfs() {
       const info  = teamMap[team] || {};
       const color = visibleColor(info, team);
       const rank  = rankingMap[team];
-      const isFav = favTeam === team;
       const safeT = team.replace(/"/g, "&quot;");
       const frame = info.logo
         ? `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"><img class="conf-team-logo" src="${info.logo}" alt="${team}" loading="lazy" onerror="this.style.display='none'"></div>`
         : `<div class="conf-logo-frame" style="background:${color}22;border-color:${color}66"></div>`;
-      return `<div class="conf-team-item${isFav ? " fav-team" : ""}" data-team="${safeT}">
-        <button class="fav-star-btn${isFav ? " active" : ""}" data-fav="${safeT}" title="Set as favorite">&#9733;</button>
+      return `<div class="conf-team-item" data-team="${safeT}">
         ${frame}
         <div class="conf-team-name" style="color:${color}">${team}</div>
         ${rank ? `<div class="conf-team-rank">#${rank}</div>` : ""}
@@ -703,6 +699,13 @@ function filterToTeam(team) {
 // statistical win probability.
 // ================================
 
+// Points for a pick: correct underdog picks score more, wrong favorite picks lose more.
+// win_prob is 0–100 (probability of the picked team winning pregame).
+function calcPickPoints(correct, winProb) {
+  const wp = (winProb != null && !isNaN(winProb)) ? winProb : 50;
+  return correct ? Math.round((100 - wp) / 10) + 1 : -(Math.round(wp / 10) + 1);
+}
+
 function buildPickHTML(game) {
   if (!currentUsername) {
     return `<div class="pick-section pick-cta">
@@ -719,11 +722,15 @@ function buildPickHTML(game) {
     if (!existing) return `<div class="pick-section pick-locked">Game over — pick window closed</div>`;
     const winner  = game.homePoints > game.awayPoints ? game.home : game.away;
     const correct = existing === winner;
+    const pts     = calcPickPoints(correct, userPickProbs[game.gameId]);
+    const ptsStr  = pts > 0 ? `+${pts}` : `${pts}`;
     return `<div class="pick-section">
       <span class="pick-label">Your pick:</span>
-      <span class="pick-made ${correct ? "pick-correct" : "pick-wrong"}">${existing} ${correct ? "✓" : "✗"}</span>
+      <span class="pick-made ${correct ? "pick-correct" : "pick-wrong"}">${existing} ${correct ? "✓" : "✗"} <span class="pick-pts">${ptsStr}</span></span>
     </div>`;
   }
+  const awayWP   = game.homeWinProb != null ? 100 - game.homeWinProb : 50;
+  const homeWP   = game.homeWinProb != null ? game.homeWinProb : 50;
   const safeHome = game.home.replace(/"/g, "&quot;");
   const safeAway = game.away.replace(/"/g, "&quot;");
   return `<div class="pick-section">
@@ -731,10 +738,12 @@ function buildPickHTML(game) {
     <div class="pick-buttons">
       <button class="pick-btn${existing === game.away ? " picked" : ""}"
               data-game-id="${game.gameId}" data-pick="${safeAway}"
-              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}">${game.away}</button>
+              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}"
+              data-win-prob="${awayWP}">${game.away}</button>
       <button class="pick-btn${existing === game.home ? " picked" : ""}"
               data-game-id="${game.gameId}" data-pick="${safeHome}"
-              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}">${game.home}</button>
+              data-home="${safeHome}" data-away="${safeAway}" data-week="${game.week}"
+              data-win-prob="${homeWP}">${game.home}</button>
     </div>
   </div>`;
 }
@@ -1023,8 +1032,6 @@ document.getElementById("confTabs").addEventListener("click", function(e) {
 // Team logo grid — delegate clicks so team names with apostrophes (e.g. Hawai'i)
 // are handled safely via data attributes instead of inline onclick strings.
 document.getElementById("confTeamGrid").addEventListener("click", function(e) {
-  const starBtn = e.target.closest(".fav-star-btn");
-  if (starBtn) { setFavTeam(starBtn.dataset.fav); return; }
   const item = e.target.closest(".conf-team-item");
   if (item && item.dataset.team) filterToTeam(item.dataset.team);
 });
@@ -1034,7 +1041,8 @@ document.getElementById("gamesContainer").addEventListener("click", function(e) 
   const pickBtn = e.target.closest(".pick-btn");
   if (pickBtn) {
     submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
-               pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week));
+               pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week),
+               parseInt(pickBtn.dataset.winProb));
     return;
   }
   if (e.target.closest(".pick-cta-btn")) { openUsernameModal(); return; }
@@ -1371,13 +1379,9 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function finishLogin(username, savedFavTeam) {
+async function finishLogin(username) {
   currentUsername = username;
   localStorage.setItem("cfb_username", username);
-  if (savedFavTeam) {
-    favTeam = savedFavTeam;
-    localStorage.setItem("cfb_favteam", savedFavTeam);
-  }
   closeUsernameModal();
   await loadUserPicks();
   applyFilters();
@@ -1394,7 +1398,7 @@ async function createAccount() {
   if (existing)               { err.textContent = "That username is already taken."; return; }
   const pinHash = await sha256(pin);
   await sb.from("user_prefs").insert({ username, pin_hash: pinHash });
-  await finishLogin(username, null);
+  await finishLogin(username);
 }
 
 async function loginWithPin() {
@@ -1404,18 +1408,18 @@ async function loginWithPin() {
   err.textContent = "";
   if (!username) { err.textContent = "Enter your username."; return; }
   if (!pin)      { err.textContent = "Enter your PIN."; return; }
-  const { data } = await sb.from("user_prefs").select("pin_hash, favorite_team").eq("username", username).maybeSingle();
+  const { data } = await sb.from("user_prefs").select("pin_hash").eq("username", username).maybeSingle();
   if (!data)     { err.textContent = "Username not found — create an account first."; return; }
   if (!data.pin_hash) {
     // Legacy account (no PIN yet) — let them set one now
     const pinHash = await sha256(pin);
     await sb.from("user_prefs").update({ pin_hash: pinHash }).eq("username", username);
-    await finishLogin(username, data.favorite_team);
+    await finishLogin(username);
     return;
   }
   const pinHash = await sha256(pin);
   if (pinHash !== data.pin_hash) { err.textContent = "Incorrect PIN."; return; }
-  await finishLogin(username, data.favorite_team);
+  await finishLogin(username);
 }
 
 document.getElementById("createAccountBtn").addEventListener("click", createAccount);
@@ -1435,35 +1439,27 @@ document.getElementById("pinInput").addEventListener("keydown", function(e) {
 
 async function loadUserPicks() {
   if (!currentUsername) return;
-  const { data } = await sb.from("picks").select("game_id, picked_team").eq("username", currentUsername);
-  if (data) { userPicks = {}; data.forEach(p => { userPicks[p.game_id] = p.picked_team; }); }
+  const { data } = await sb.from("picks").select("game_id, picked_team, win_prob").eq("username", currentUsername);
+  if (data) {
+    userPicks = {};
+    userPickProbs = {};
+    data.forEach(p => {
+      userPicks[p.game_id] = p.picked_team;
+      if (p.win_prob != null) userPickProbs[p.game_id] = p.win_prob;
+    });
+  }
 }
 
-async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week) {
+async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week, winProb) {
   if (!currentUsername) { openUsernameModal(); return; }
   userPicks[gameId] = pickedTeam;
+  if (winProb != null && !isNaN(winProb)) userPickProbs[gameId] = winProb;
   applyFilters();
   await sb.from("picks").upsert({
     username: currentUsername, game_id: gameId, picked_team: pickedTeam,
-    home_team: homeTeam, away_team: awayTeam, week, season: SEASON
+    home_team: homeTeam, away_team: awayTeam, week, season: SEASON,
+    win_prob: (!isNaN(winProb) && winProb != null) ? winProb : null
   }, { onConflict: "username,game_id" });
-}
-
-
-// ================================
-// SUPABASE — FAVORITES
-// ================================
-
-async function setFavTeam(team) {
-  if (!currentUsername) { openUsernameModal(); return; }
-  favTeam = favTeam === team ? null : team;
-  localStorage.setItem("cfb_favteam", favTeam || "");
-  if (activeConf === "__all__") showAllConfs();
-  else showConfTeams(activeConf, false);
-  await sb.from("user_prefs").upsert(
-    { username: currentUsername, favorite_team: favTeam },
-    { onConflict: "username" }
-  );
 }
 
 
@@ -1477,7 +1473,7 @@ async function openLeaderboard() {
   modal.classList.add("open");
   content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">Loading…</p>`;
 
-  const { data: picks } = await sb.from("picks").select("username, game_id, picked_team").eq("season", SEASON);
+  const { data: picks } = await sb.from("picks").select("username, game_id, picked_team, win_prob").eq("season", SEASON);
   if (!picks || picks.length === 0) {
     content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No picks yet — be the first!</p>`;
     return;
@@ -1490,14 +1486,18 @@ async function openLeaderboard() {
 
   const scores = {};
   picks.forEach(p => {
-    if (!scores[p.username]) scores[p.username] = { correct: 0, total: 0 };
+    if (!scores[p.username]) scores[p.username] = { points: 0, correct: 0, total: 0 };
     const winner = completedMap[p.game_id];
-    if (winner) { scores[p.username].total++; if (p.picked_team === winner) scores[p.username].correct++; }
+    if (!winner) return;
+    scores[p.username].total++;
+    const correct = p.picked_team === winner;
+    if (correct) scores[p.username].correct++;
+    scores[p.username].points += calcPickPoints(correct, p.win_prob);
   });
 
   const sorted = Object.entries(scores)
     .filter(([, s]) => s.total > 0)
-    .sort(([, a], [, b]) => b.correct - a.correct || b.total - a.total);
+    .sort(([, a], [, b]) => b.points - a.points);
 
   if (sorted.length === 0) {
     content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No completed games yet — check back once the season starts!</p>`;
@@ -1506,13 +1506,13 @@ async function openLeaderboard() {
 
   content.innerHTML = `
     <table class="leaderboard-table">
-      <thead><tr><th>#</th><th>Username</th><th>Correct</th><th>Total</th><th>%</th></tr></thead>
+      <thead><tr><th>#</th><th>Username</th><th>Points</th><th>Record</th></tr></thead>
       <tbody>
         ${sorted.slice(0, 20).map(([username, s], i) => {
-          const pct  = s.total ? Math.round(s.correct / s.total * 100) : 0;
-          const isMe = username === currentUsername;
+          const isMe   = username === currentUsername;
+          const ptsStr = s.points > 0 ? `+${s.points}` : `${s.points}`;
           return `<tr class="${isMe ? "leaderboard-me" : ""}">
-            <td>${i + 1}</td><td>${username}</td><td>${s.correct}</td><td>${s.total}</td><td>${pct}%</td>
+            <td>${i + 1}</td><td>${username}</td><td class="lb-pts">${ptsStr}</td><td>${s.correct}–${s.total - s.correct}</td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -1711,15 +1711,7 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (currentUsername) {
-    await loadUserPicks();
-    const { data } = await sb.from("user_prefs").select("favorite_team").eq("username", currentUsername).maybeSingle();
-    if (data && data.favorite_team) {
-      favTeam = data.favorite_team;
-      localStorage.setItem("cfb_favteam", favTeam);
-    }
-  }
-  // Modal only opens when user tries to make a pick or set a favorite — not on page load
+  if (currentUsername) await loadUserPicks();
 }
 
 initSupabase();

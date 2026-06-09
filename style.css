@@ -1030,6 +1030,20 @@ footer {
 .pick-correct { color: #4ade80; }
 .pick-wrong   { color: #f87171; }
 
+.pick-pts {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 3px;
+}
+
+.lb-pts {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
 .pick-locked {
   color: #6670a0;
   font-size: 12px;
@@ -1078,36 +1092,6 @@ footer {
 .leaderboard-btn:hover { opacity: 0.85; }
 
 
-/* ================================
-   FAVORITE STAR
-   ================================ */
-
-.fav-star-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: transparent;
-  border: none;
-  color: #3a3a5a;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px;
-  transition: color 0.15s, transform 0.15s;
-  z-index: 2;
-}
-
-.fav-star-btn:hover {
-  color: #fbbf24;
-  transform: scale(1.25);
-}
-
-.fav-star-btn.active { color: #fbbf24; }
-
-.conf-team-item.fav-team {
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
-  border-color: rgba(251, 191, 36, 0.45) !important;
-}
 
 
 /* ================================
