@@ -1712,7 +1712,16 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (currentUsername) await loadUserPicks();
+  if (!currentUsername) return;
+  // Verify the stored username has a PIN — accounts created before PIN was added
+  // won't have one, so clear localStorage and let them register properly on next pick.
+  const { data } = await sb.from("user_prefs").select("pin_hash").eq("username", currentUsername).maybeSingle();
+  if (!data || !data.pin_hash) {
+    currentUsername = null;
+    localStorage.removeItem("cfb_username");
+    return;
+  }
+  await loadUserPicks();
 }
 
 initSupabase();
