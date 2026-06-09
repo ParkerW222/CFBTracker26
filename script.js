@@ -1467,6 +1467,9 @@ async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week, winProb)
 // SUPABASE — LEADERBOARD
 // ================================
 
+let lbAllPicks  = [];  // all picks fetched for current leaderboard session
+let lbSorted    = [];  // sorted [username, scores] entries
+
 async function openLeaderboard() {
   const modal   = document.getElementById("leaderboardModal");
   const content = document.getElementById("leaderboardContent");
@@ -1478,6 +1481,7 @@ async function openLeaderboard() {
     content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No picks yet — be the first!</p>`;
     return;
   }
+  lbAllPicks = picks;
 
   const completedMap = {};
   allGames.filter(g => g.isCompleted).forEach(g => {
@@ -1495,39 +1499,105 @@ async function openLeaderboard() {
     scores[p.username].points += calcPickPoints(correct, p.win_prob);
   });
 
-  const sorted = Object.entries(scores)
+  lbSorted = Object.entries(scores)
     .filter(([, s]) => s.total > 0)
     .sort(([, a], [, b]) => b.points - a.points || (b.correct / b.total) - (a.correct / a.total));
 
-  if (sorted.length === 0) {
+  renderLeaderboardTable();
+}
+
+function renderLeaderboardTable() {
+  const content = document.getElementById("leaderboardContent");
+  if (lbSorted.length === 0) {
     content.innerHTML = `<p style="color:#6670a0;text-align:center;padding:20px">No completed games yet — check back once the season starts!</p>`;
     return;
   }
-
   content.innerHTML = `
     <table class="leaderboard-table">
       <thead><tr><th>#</th><th>Username</th><th>Points</th><th>Record</th><th>%</th></tr></thead>
       <tbody>
-        ${sorted.slice(0, 20).map(([username, s], i) => {
+        ${lbSorted.slice(0, 20).map(([username, s], i) => {
           const isMe   = username === currentUsername;
           const ptsStr = s.points > 0 ? `+${s.points}` : `${s.points}`;
           const pct    = s.total ? Math.round(s.correct / s.total * 100) : 0;
           return `<tr class="${isMe ? "leaderboard-me" : ""}">
-            <td>${i + 1}</td><td>${username}</td><td class="lb-pts">${ptsStr}</td><td>${s.correct}–${s.total - s.correct}</td><td>${pct}%</td>
+            <td>${i + 1}</td>
+            <td><button class="lb-username-btn" data-username="${username}">${username}</button></td>
+            <td class="lb-pts">${ptsStr}</td>
+            <td>${s.correct}–${s.total - s.correct}</td>
+            <td>${pct}%</td>
           </tr>`;
         }).join("")}
       </tbody>
     </table>`;
 }
 
+function showPickHistory(username) {
+  const content  = document.getElementById("leaderboardContent");
+  const gameMap  = {};
+  allGames.forEach(g => { gameMap[g.gameId] = g; });
+
+  const completedMap = {};
+  allGames.filter(g => g.isCompleted).forEach(g => {
+    completedMap[g.gameId] = g.homePoints > g.awayPoints ? g.home : g.away;
+  });
+
+  const userPickList = lbAllPicks
+    .filter(p => p.username === username)
+    .sort((a, b) => {
+      const wa = gameMap[a.game_id] ? gameMap[a.game_id].week : 0;
+      const wb = gameMap[b.game_id] ? gameMap[b.game_id].week : 0;
+      return wa - wb;
+    });
+
+  const rows = userPickList.map(p => {
+    const game    = gameMap[p.game_id];
+    const winner  = completedMap[p.game_id];
+    const matchup = game ? `${game.away} @ ${game.home}` : `Game #${p.game_id}`;
+    const week    = game ? `Wk ${game.week}` : "—";
+    let resultHTML;
+    if (winner) {
+      const correct = p.picked_team === winner;
+      const pts     = calcPickPoints(correct, p.win_prob);
+      resultHTML = correct
+        ? `<span class="lbh-correct">✓ +${pts} pts</span>`
+        : `<span class="lbh-wrong">✗ 0 pts</span>`;
+    } else {
+      resultHTML = `<span class="lbh-pending">Pending</span>`;
+    }
+    return `<tr>
+      <td>${week}</td>
+      <td class="lbh-matchup">${matchup}</td>
+      <td class="lbh-pick">${p.picked_team}</td>
+      <td>${resultHTML}</td>
+    </tr>`;
+  }).join("");
+
+  content.innerHTML = `
+    <div class="lbh-header">
+      <button class="lb-back-btn">&#8592; Leaderboard</button>
+      <span class="lbh-title">${username}'s Picks</span>
+    </div>
+    <table class="leaderboard-table lbh-table">
+      <thead><tr><th>Wk</th><th>Matchup</th><th>Pick</th><th>Result</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="4" style="text-align:center;color:#6670a0;padding:16px">No picks yet</td></tr>`}</tbody>
+    </table>`;
+}
+
 function closeLeaderboard() {
   document.getElementById("leaderboardModal").classList.remove("open");
+  lbAllPicks = [];
+  lbSorted   = [];
 }
 
 document.getElementById("leaderboardBtn").addEventListener("click", openLeaderboard);
 document.getElementById("leaderboardModalClose").addEventListener("click", closeLeaderboard);
 document.getElementById("leaderboardModal").addEventListener("click", function(e) {
-  if (e.target === this) closeLeaderboard();
+  if (e.target === this) { closeLeaderboard(); return; }
+  const userBtn = e.target.closest(".lb-username-btn");
+  if (userBtn) { showPickHistory(userBtn.dataset.username); return; }
+  const backBtn = e.target.closest(".lb-back-btn");
+  if (backBtn) renderLeaderboardTable();
 });
 
 
