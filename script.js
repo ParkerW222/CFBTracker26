@@ -1141,6 +1141,7 @@ async function fetchRoster(team) {
     const toAdd = manualIn
       .filter(e => !existing.has(`${e.firstName} ${e.lastName}`.toLowerCase().trim()))
       .map(e => ({
+        id: e.id || null,
         firstName: e.firstName, lastName: e.lastName, position: e.position,
         jersey: null, height: null, weight: null, year: null,
         homeCity: null, homeState: null,
