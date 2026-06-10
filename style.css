@@ -51,9 +51,9 @@ header p {
    ================================ */
 
 .user-bar {
-  background: #0a0a16;
-  border-bottom: 1px solid #1a1a30;
-  padding: 8px 20px;
+  border-top: 1px solid #1a1a30;
+  margin-top: 12px;
+  padding-top: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
