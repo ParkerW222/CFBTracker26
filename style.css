@@ -47,6 +47,58 @@ header p {
 
 
 /* ================================
+   USER BAR
+   ================================ */
+
+.user-bar {
+  background: #0a0a16;
+  border-bottom: 1px solid #1a1a30;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 100%;
+}
+
+.user-bar-name {
+  font-size: 13px;
+  color: #6670a0;
+  letter-spacing: 0.5px;
+}
+
+.user-bar-name span {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.user-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.user-bar-btn {
+  background: transparent;
+  border: 1px solid #2a2a45;
+  color: #8888aa;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.user-bar-btn:hover {
+  border-color: #6670a0;
+  color: #ffffff;
+}
+
+.user-bar-btn-danger:hover {
+  border-color: #e8374d;
+  color: #e8374d;
+}
+
+
+/* ================================
    CONFERENCE BROWSER
    ================================ */
 

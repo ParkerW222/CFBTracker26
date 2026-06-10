@@ -1379,12 +1379,46 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function updateUserBar() {
+  const bar = document.getElementById("userBar");
+  const name = document.getElementById("userBarName");
+  if (currentUsername) {
+    bar.style.display = "flex";
+    name.innerHTML = `Logged in as <span>${currentUsername}</span>`;
+  } else {
+    bar.style.display = "none";
+  }
+}
+
 async function finishLogin(username) {
   currentUsername = username;
   localStorage.setItem("cfb_username", username);
   closeUsernameModal();
   await loadUserPicks();
+  updateUserBar();
   applyFilters();
+}
+
+function logout() {
+  currentUsername = null;
+  localStorage.removeItem("cfb_username");
+  userPicks = {};
+  userPickProbs = {};
+  updateUserBar();
+  applyFilters();
+}
+
+async function deleteAccount() {
+  if (!currentUsername) return;
+  const password = prompt(`Enter your password to confirm deleting account "${currentUsername}":`);
+  if (!password) return;
+  const hash = await sha256(password);
+  const { data } = await sb.from("accounts").select("password_hash").eq("username", currentUsername).maybeSingle();
+  if (!data || hash !== data.password_hash) { alert("Incorrect password — account not deleted."); return; }
+  await sb.from("picks").delete().eq("username", currentUsername);
+  await sb.from("accounts").delete().eq("username", currentUsername);
+  logout();
+  alert("Account deleted.");
 }
 
 async function createAccount() {
@@ -1435,6 +1469,8 @@ document.getElementById("authToggleBtn").addEventListener("click", function() {
   setAuthMode(authMode === "create" ? "login" : "create");
 });
 document.getElementById("usernameSkip").addEventListener("click", closeUsernameModal);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("deleteAccountBtn").addEventListener("click", deleteAccount);
 document.getElementById("usernameInput").addEventListener("keydown", function(e) {
   if (e.key === "Enter") document.getElementById("passwordInput").focus();
 });
@@ -1455,7 +1491,8 @@ document.getElementById("passwordInput2").addEventListener("keydown", function(e
 
 async function loadUserPicks() {
   if (!currentUsername) return;
-  const { data } = await sb.from("picks").select("game_id, picked_team, win_prob").eq("username", currentUsername);
+  const { data, error } = await sb.from("picks").select("game_id, picked_team, win_prob").eq("username", currentUsername);
+  if (error) { console.error("Failed to load picks:", error.message); return; }
   if (data) {
     userPicks = {};
     userPickProbs = {};
@@ -1471,11 +1508,12 @@ async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week, winProb)
   userPicks[gameId] = pickedTeam;
   if (winProb != null && !isNaN(winProb)) userPickProbs[gameId] = winProb;
   applyFilters();
-  await sb.from("picks").upsert({
+  const { error } = await sb.from("picks").upsert({
     username: currentUsername, game_id: gameId, picked_team: pickedTeam,
     home_team: homeTeam, away_team: awayTeam, week, season: SEASON,
     win_prob: (!isNaN(winProb) && winProb != null) ? winProb : null
   }, { onConflict: "username,game_id" });
+  if (error) console.error("Pick save failed:", error.message);
 }
 
 
@@ -1804,7 +1842,11 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (currentUsername) await loadUserPicks();
+  updateUserBar();
+  if (currentUsername) {
+    await loadUserPicks();
+    applyFilters();
+  }
 }
 
 initSupabase();
