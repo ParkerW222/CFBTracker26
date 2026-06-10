@@ -83,6 +83,45 @@ const MANUAL_INCOMING = {
   "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri",       id: 4685696 }],
 };
 
+// ESPN athlete IDs for known transfer portal players.
+// Portal API entries never include IDs, so headshots break for anyone who transferred.
+// Any player in this map gets their ID patched in during roster build.
+const PORTAL_HEADSHOT_IDS = {
+  // QBs
+  "sam leavitt":          5078810,
+  "ryan staub":           4917093,
+  "byrum brown":          4880272,
+  "aaron philo":          5132812,
+  "dj lagway":            5079555,
+  "anthony colandrea":    5044387,
+  "dylan raiola":         5079572,
+  "aidan chiles":         5075805,
+  "rocco becht":          4801299,
+  "jaylen raynor":        5080403,
+  "katin houser":         4795295,
+  "josh hoover":          4685401,
+  "dylan lonergan":       4870900,
+  "colton joseph":        5125715,
+  "ashton daniels":       4838679,
+  "darian mensah":        5121169,
+  "drew mestemaker":      5219834,
+  "beau pribula":         4685696,
+  "brendan sorsby":       4899046,
+  // OL
+  "jordan seaton":        5079682,
+  // WR
+  "cam coleman":          5079376,
+  "quintrevion wisner":   4871076,
+  // DL
+  "princewill umanmielen": 4917971,
+  // DB
+  "koi perich":           5142588,
+  "damon wilson":         4871089,
+  "damon wilson ii":      4871089,
+  // TE / other
+  "john henry daley":     5160962,
+};
+
 
 // ================================
 // LOAD GAMES FROM API
@@ -1178,19 +1217,14 @@ async function fetchRoster(team) {
     data = [...data, ...freshmen];
   }
 
-  // Patch ESPN IDs from MANUAL_INCOMING onto any matching player that came in via
-  // the portal API (which doesn't carry IDs), so headshots still work for transfers.
-  const idOverrides = {};
-  (MANUAL_INCOMING[team] || []).forEach(e => {
-    if (e.id) idOverrides[`${e.firstName} ${e.lastName}`.toLowerCase().trim()] = e.id;
+  // Patch ESPN IDs onto portal players — the portal API never includes player IDs
+  // so any transfer would show no headshot without this.
+  data = data.map(p => {
+    if (p.id) return p;
+    const key = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
+    const id  = PORTAL_HEADSHOT_IDS[key];
+    return id ? { ...p, id } : p;
   });
-  if (Object.keys(idOverrides).length) {
-    data = data.map(p => {
-      if (p.id) return p;
-      const key = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
-      return idOverrides[key] ? { ...p, id: idOverrides[key] } : p;
-    });
-  }
 
   rosterCache[team] = data;
   return data;
