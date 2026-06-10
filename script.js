@@ -59,28 +59,28 @@ const MANUAL_EXITS = {
 
 const MANUAL_INCOMING = {
   // ---- True freshman (not in portal OR 2025 roster — must be added manually) ----
-  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, isRecruit: true }],
-  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, isRecruit: true }],
+  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, isRecruit: true, id: 5158948 }],
+  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, isRecruit: true, id: 5159016 }],
 
   // ---- Transfer QB additions (deduplication prevents doubles if API already has them) ----
-  "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State"  }],
-  "Tennessee":      [{ firstName: "Ryan",    lastName: "Staub",      position: "QB", stars: 0, origin: "Colorado"       }],
-  "Auburn":         [{ firstName: "Byrum",   lastName: "Brown",      position: "QB", stars: 0, origin: "South Florida"  }],
-  "Florida":        [{ firstName: "Aaron",   lastName: "Philo",      position: "QB", stars: 0, origin: "Georgia Tech"   }],
-  "Baylor":         [{ firstName: "DJ",      lastName: "Lagway",     position: "QB", stars: 0, origin: "Florida"        }],
-  "Nebraska":       [{ firstName: "Anthony", lastName: "Colandrea",  position: "QB", stars: 0, origin: "UNLV"           }],
-  "Oregon":         [{ firstName: "Dylan",   lastName: "Raiola",     position: "QB", stars: 5, origin: "Nebraska"       }],
-  "Northwestern":   [{ firstName: "Aidan",   lastName: "Chiles",     position: "QB", stars: 0, origin: "Michigan State" }],
-  "Penn State":     [{ firstName: "Rocco",   lastName: "Becht",      position: "QB", stars: 0, origin: "Iowa State"     }],
-  "Iowa State":     [{ firstName: "Jaylen",  lastName: "Raynor",     position: "QB", stars: 0, origin: "Arkansas State" }],
-  "Illinois":       [{ firstName: "Katin",   lastName: "Houser",     position: "QB", stars: 0, origin: "East Carolina"  }],
-  "Indiana":        [{ firstName: "Josh",    lastName: "Hoover",     position: "QB", stars: 0, origin: "TCU"            }],
-  "Rutgers":        [{ firstName: "Dylan",   lastName: "Lonergan",   position: "QB", stars: 0, origin: "Boston College" }],
-  "Wisconsin":      [{ firstName: "Colton",  lastName: "Joseph",     position: "QB", stars: 0, origin: "Old Dominion"   }],
-  "Florida State":  [{ firstName: "Ashton",  lastName: "Daniels",    position: "QB", stars: 0, origin: "Auburn"         }],
-  "Miami":          [{ firstName: "Darian",  lastName: "Mensah",     position: "QB", stars: 0, origin: "Duke"           }],
-  "Oklahoma State": [{ firstName: "Drew",    lastName: "Mestemaker", position: "QB", stars: 0, origin: "North Texas"    }],
-  "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri"       }],
+  "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State",  id: 5078810 }],
+  "Tennessee":      [{ firstName: "Ryan",    lastName: "Staub",      position: "QB", stars: 0, origin: "Colorado",       id: 4917093 }],
+  "Auburn":         [{ firstName: "Byrum",   lastName: "Brown",      position: "QB", stars: 0, origin: "South Florida",  id: 4880272 }],
+  "Florida":        [{ firstName: "Aaron",   lastName: "Philo",      position: "QB", stars: 0, origin: "Georgia Tech",   id: 5132812 }],
+  "Baylor":         [{ firstName: "DJ",      lastName: "Lagway",     position: "QB", stars: 0, origin: "Florida",        id: 5079555 }],
+  "Nebraska":       [{ firstName: "Anthony", lastName: "Colandrea",  position: "QB", stars: 0, origin: "UNLV",           id: 5044387 }],
+  "Oregon":         [{ firstName: "Dylan",   lastName: "Raiola",     position: "QB", stars: 5, origin: "Nebraska",       id: 5079572 }],
+  "Northwestern":   [{ firstName: "Aidan",   lastName: "Chiles",     position: "QB", stars: 0, origin: "Michigan State", id: 5075805 }],
+  "Penn State":     [{ firstName: "Rocco",   lastName: "Becht",      position: "QB", stars: 0, origin: "Iowa State",     id: 4801299 }],
+  "Iowa State":     [{ firstName: "Jaylen",  lastName: "Raynor",     position: "QB", stars: 0, origin: "Arkansas State", id: 5080403 }],
+  "Illinois":       [{ firstName: "Katin",   lastName: "Houser",     position: "QB", stars: 0, origin: "East Carolina",  id: 4795295 }],
+  "Indiana":        [{ firstName: "Josh",    lastName: "Hoover",     position: "QB", stars: 0, origin: "TCU",            id: 4685401 }],
+  "Rutgers":        [{ firstName: "Dylan",   lastName: "Lonergan",   position: "QB", stars: 0, origin: "Boston College", id: 4870900 }],
+  "Wisconsin":      [{ firstName: "Colton",  lastName: "Joseph",     position: "QB", stars: 0, origin: "Old Dominion",   id: 5125715 }],
+  "Florida State":  [{ firstName: "Ashton",  lastName: "Daniels",    position: "QB", stars: 0, origin: "Auburn",         id: 4838679 }],
+  "Miami":          [{ firstName: "Darian",  lastName: "Mensah",     position: "QB", stars: 0, origin: "Duke",           id: 5121169 }],
+  "Oklahoma State": [{ firstName: "Drew",    lastName: "Mestemaker", position: "QB", stars: 0, origin: "North Texas"                 }],
+  "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri",       id: 4685696 }],
 };
 
 
