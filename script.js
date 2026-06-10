@@ -1178,6 +1178,20 @@ async function fetchRoster(team) {
     data = [...data, ...freshmen];
   }
 
+  // Patch ESPN IDs from MANUAL_INCOMING onto any matching player that came in via
+  // the portal API (which doesn't carry IDs), so headshots still work for transfers.
+  const idOverrides = {};
+  (MANUAL_INCOMING[team] || []).forEach(e => {
+    if (e.id) idOverrides[`${e.firstName} ${e.lastName}`.toLowerCase().trim()] = e.id;
+  });
+  if (Object.keys(idOverrides).length) {
+    data = data.map(p => {
+      if (p.id) return p;
+      const key = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
+      return idOverrides[key] ? { ...p, id: idOverrides[key] } : p;
+    });
+  }
+
   rosterCache[team] = data;
   return data;
 }
