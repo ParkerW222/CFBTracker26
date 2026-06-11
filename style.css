@@ -351,6 +351,21 @@ header p {
 .ph-loss { background: rgba(232,55,77,0.15);  color: #e8374d; }
 .ph-pending { background: #1a1a30; color: #6670a0; }
 
+.ph-remove {
+  background: transparent;
+  border: none;
+  color: #3a3a55;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.ph-remove:hover {
+  color: #e8374d;
+}
+
 .picks-empty {
   text-align: center;
   color: #6670a0;

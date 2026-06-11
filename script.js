@@ -1956,6 +1956,7 @@ function renderPickHistory() {
           <div class="ph-meta">
             ${probStr ? `<span class="ph-prob">${probStr} win prob</span>` : ""}
             ${resultBadge}
+            <button class="ph-remove" data-game-id="${g.gameId}" title="Remove pick">&times;</button>
           </div>
         </div>`;
     });
@@ -1963,6 +1964,11 @@ function renderPickHistory() {
 
   el.innerHTML = html;
 }
+
+document.getElementById("picksContent").addEventListener("click", function(e) {
+  const btn = e.target.closest(".ph-remove");
+  if (btn) removePick(parseInt(btn.dataset.gameId)).then(() => renderPickHistory());
+});
 
 document.getElementById("pageTabs").addEventListener("click", function(e) {
   const tab = e.target.closest(".page-tab");
