@@ -1079,9 +1079,13 @@ document.getElementById("confTeamGrid").addEventListener("click", function(e) {
 document.getElementById("gamesContainer").addEventListener("click", function(e) {
   const pickBtn = e.target.closest(".pick-btn");
   if (pickBtn) {
-    submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
-               pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week),
-               parseInt(pickBtn.dataset.winProb));
+    if (pickBtn.classList.contains("picked")) {
+      removePick(parseInt(pickBtn.dataset.gameId));
+    } else {
+      submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
+                 pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week),
+                 parseInt(pickBtn.dataset.winProb));
+    }
     return;
   }
   if (e.target.closest(".pick-cta-btn")) { openUsernameModal(); return; }
@@ -1563,6 +1567,16 @@ async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week, winProb)
     win_prob: (!isNaN(winProb) && winProb != null) ? winProb : null
   }, { onConflict: "username,game_id" });
   if (error) console.error("Pick save failed:", error.message);
+}
+
+async function removePick(gameId) {
+  if (!currentUsername) return;
+  delete userPicks[gameId];
+  delete userPickProbs[gameId];
+  applyFilters();
+  const { error } = await sb.from("picks").delete()
+    .eq("username", currentUsername).eq("game_id", gameId);
+  if (error) console.error("Pick delete failed:", error.message);
 }
 
 
