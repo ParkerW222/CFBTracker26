@@ -247,6 +247,120 @@ header p {
 
 
 /* ================================
+   MY PICKS HISTORY
+   ================================ */
+
+#picksSection {
+  max-width: 700px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.ph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.ph-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.ph-record {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #4caf7d;
+}
+
+.ph-record-pending {
+  color: #6670a0;
+  font-size: 14px;
+}
+
+.ph-week-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #6670a0;
+  margin: 16px 0 6px;
+}
+
+.ph-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0e0e1e;
+  border: 1px solid #1a1a30;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+}
+
+.ph-teams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.ph-team {
+  color: #6670a0;
+}
+
+.ph-team.ph-picked {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ph-vs {
+  color: #3a3a55;
+  font-size: 11px;
+}
+
+.ph-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ph-prob {
+  font-size: 11px;
+  color: #6670a0;
+  font-family: 'Inter', sans-serif;
+}
+
+.ph-result {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.ph-win  { background: rgba(76,175,125,0.15); color: #4caf7d; }
+.ph-loss { background: rgba(232,55,77,0.15);  color: #e8374d; }
+.ph-pending { background: #1a1a30; color: #6670a0; }
+
+.picks-empty {
+  text-align: center;
+  color: #6670a0;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 48px 0;
+}
+
+
+/* ================================
    FILTERS SECTION
    ================================ */
 

@@ -1880,15 +1880,88 @@ function switchToView(view) {
     document.querySelector(".filters"),
     document.querySelector("main"),
   ];
-  const cfpSection = document.getElementById("cfpSection");
+  const cfpSection   = document.getElementById("cfpSection");
+  const picksSection = document.getElementById("picksSection");
+
+  scheduleEls.forEach(el => { if (el) el.style.display = "none"; });
+  cfpSection.style.display   = "none";
+  picksSection.style.display = "none";
+
   if (view === "schedule") {
     scheduleEls.forEach(el => { if (el) el.style.display = ""; });
-    cfpSection.style.display = "none";
-  } else {
-    scheduleEls.forEach(el => { if (el) el.style.display = "none"; });
+  } else if (view === "playoff") {
     cfpSection.style.display = "block";
     loadCFPBracket();
+  } else if (view === "picks") {
+    picksSection.style.display = "block";
+    renderPickHistory();
   }
+}
+
+function renderPickHistory() {
+  const el = document.getElementById("picksContent");
+  if (!currentUsername) {
+    el.innerHTML = `<p class="picks-empty">Log in to see your pick history.</p>`;
+    return;
+  }
+  const picked = allGames.filter(g => userPicks[g.gameId]);
+  if (!picked.length) {
+    el.innerHTML = `<p class="picks-empty">You haven't made any picks yet.</p>`;
+    return;
+  }
+
+  // Group by week
+  const byWeek = {};
+  picked.forEach(g => {
+    if (!byWeek[g.week]) byWeek[g.week] = [];
+    byWeek[g.week].push(g);
+  });
+
+  let wins = 0, losses = 0;
+  picked.forEach(g => {
+    if (g.homePoints != null && g.awayPoints != null && g.homePoints !== g.awayPoints) {
+      const winner = g.homePoints > g.awayPoints ? g.home : g.away;
+      if (userPicks[g.gameId] === winner) wins++; else losses++;
+    }
+  });
+
+  const record = wins + losses > 0
+    ? `<span class="ph-record">${wins}–${losses}</span>`
+    : `<span class="ph-record ph-record-pending">${picked.length} picks</span>`;
+
+  let html = `<div class="ph-header"><span class="ph-title">Pick History</span>${record}</div>`;
+
+  Object.keys(byWeek).sort((a, b) => a - b).forEach(week => {
+    html += `<div class="ph-week-label">Week ${week}</div>`;
+    byWeek[week].forEach(g => {
+      const pick    = userPicks[g.gameId];
+      const prob    = userPickProbs[g.gameId];
+      const done    = g.homePoints != null && g.awayPoints != null && g.homePoints !== g.awayPoints;
+      const winner  = done ? (g.homePoints > g.awayPoints ? g.home : g.away) : null;
+      const correct = done ? pick === winner : null;
+
+      const resultBadge = done
+        ? `<span class="ph-result ${correct ? "ph-win" : "ph-loss"}">${correct ? "W" : "L"}</span>`
+        : `<span class="ph-result ph-pending">–</span>`;
+
+      const probStr = prob != null && !isNaN(prob) ? `${Math.round(prob)}%` : "";
+
+      html += `
+        <div class="ph-row">
+          <div class="ph-teams">
+            <span class="ph-team ${pick === g.away ? "ph-picked" : ""}">${g.away}</span>
+            <span class="ph-vs">@</span>
+            <span class="ph-team ${pick === g.home ? "ph-picked" : ""}">${g.home}</span>
+          </div>
+          <div class="ph-meta">
+            ${probStr ? `<span class="ph-prob">${probStr} win prob</span>` : ""}
+            ${resultBadge}
+          </div>
+        </div>`;
+    });
+  });
+
+  el.innerHTML = html;
 }
 
 document.getElementById("pageTabs").addEventListener("click", function(e) {
