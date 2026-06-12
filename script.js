@@ -59,28 +59,67 @@ const MANUAL_EXITS = {
 
 const MANUAL_INCOMING = {
   // ---- True freshman (not in portal OR 2025 roster — must be added manually) ----
-  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, isRecruit: true }],
-  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, isRecruit: true }],
+  "Vanderbilt":     [{ firstName: "Jared",   lastName: "Curtis",     position: "QB", stars: 5, isRecruit: true, id: 5158948 }],
+  "Colorado":       [{ firstName: "Julian",  lastName: "Lewis",      position: "QB", stars: 5, isRecruit: true, id: 5159016 }],
 
   // ---- Transfer QB additions (deduplication prevents doubles if API already has them) ----
-  "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State"  }],
-  "Tennessee":      [{ firstName: "Ryan",    lastName: "Staub",      position: "QB", stars: 0, origin: "Colorado"       }],
-  "Auburn":         [{ firstName: "Byrum",   lastName: "Brown",      position: "QB", stars: 0, origin: "South Florida"  }],
-  "Florida":        [{ firstName: "Aaron",   lastName: "Philo",      position: "QB", stars: 0, origin: "Georgia Tech"   }],
-  "Baylor":         [{ firstName: "DJ",      lastName: "Lagway",     position: "QB", stars: 0, origin: "Florida"        }],
-  "Nebraska":       [{ firstName: "Anthony", lastName: "Colandrea",  position: "QB", stars: 0, origin: "UNLV"           }],
-  "Oregon":         [{ firstName: "Dylan",   lastName: "Raiola",     position: "QB", stars: 5, origin: "Nebraska"       }],
-  "Northwestern":   [{ firstName: "Aidan",   lastName: "Chiles",     position: "QB", stars: 0, origin: "Michigan State" }],
-  "Penn State":     [{ firstName: "Rocco",   lastName: "Becht",      position: "QB", stars: 0, origin: "Iowa State"     }],
-  "Iowa State":     [{ firstName: "Jaylen",  lastName: "Raynor",     position: "QB", stars: 0, origin: "Arkansas State" }],
-  "Illinois":       [{ firstName: "Katin",   lastName: "Houser",     position: "QB", stars: 0, origin: "East Carolina"  }],
-  "Indiana":        [{ firstName: "Josh",    lastName: "Hoover",     position: "QB", stars: 0, origin: "TCU"            }],
-  "Rutgers":        [{ firstName: "Dylan",   lastName: "Lonergan",   position: "QB", stars: 0, origin: "Boston College" }],
-  "Wisconsin":      [{ firstName: "Colton",  lastName: "Joseph",     position: "QB", stars: 0, origin: "Old Dominion"   }],
-  "Florida State":  [{ firstName: "Ashton",  lastName: "Daniels",    position: "QB", stars: 0, origin: "Auburn"         }],
-  "Miami":          [{ firstName: "Darian",  lastName: "Mensah",     position: "QB", stars: 0, origin: "Duke"           }],
-  "Oklahoma State": [{ firstName: "Drew",    lastName: "Mestemaker", position: "QB", stars: 0, origin: "North Texas"    }],
-  "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri"       }],
+  "LSU":            [{ firstName: "Sam",     lastName: "Leavitt",    position: "QB", stars: 0, origin: "Arizona State",  id: 5078810 }],
+  "Tennessee":      [{ firstName: "Ryan",    lastName: "Staub",      position: "QB", stars: 0, origin: "Colorado",       id: 4917093 }],
+  "Auburn":         [{ firstName: "Byrum",   lastName: "Brown",      position: "QB", stars: 0, origin: "South Florida",  id: 4880272 }],
+  "Florida":        [{ firstName: "Aaron",   lastName: "Philo",      position: "QB", stars: 0, origin: "Georgia Tech",   id: 5132812 }],
+  "Baylor":         [{ firstName: "DJ",      lastName: "Lagway",     position: "QB", stars: 0, origin: "Florida",        id: 5079555 }],
+  "Nebraska":       [{ firstName: "Anthony", lastName: "Colandrea",  position: "QB", stars: 0, origin: "UNLV",           id: 5044387 }],
+  "Oregon":         [{ firstName: "Dylan",   lastName: "Raiola",     position: "QB", stars: 5, origin: "Nebraska",       id: 5079572 }],
+  "Northwestern":   [{ firstName: "Aidan",   lastName: "Chiles",     position: "QB", stars: 0, origin: "Michigan State", id: 5075805 }],
+  "Penn State":     [{ firstName: "Rocco",   lastName: "Becht",      position: "QB", stars: 0, origin: "Iowa State",     id: 4801299 }],
+  "Iowa State":     [{ firstName: "Jaylen",  lastName: "Raynor",     position: "QB", stars: 0, origin: "Arkansas State", id: 5080403 }],
+  "Illinois":       [{ firstName: "Katin",   lastName: "Houser",     position: "QB", stars: 0, origin: "East Carolina",  id: 4795295 }],
+  "Indiana":        [{ firstName: "Josh",    lastName: "Hoover",     position: "QB", stars: 0, origin: "TCU",            id: 4685401 }],
+  "Rutgers":        [{ firstName: "Dylan",   lastName: "Lonergan",   position: "QB", stars: 0, origin: "Boston College", id: 4870900 }],
+  "Wisconsin":      [{ firstName: "Colton",  lastName: "Joseph",     position: "QB", stars: 0, origin: "Old Dominion",   id: 5125715 }],
+  "Florida State":  [{ firstName: "Ashton",  lastName: "Daniels",    position: "QB", stars: 0, origin: "Auburn",         id: 4838679 }],
+  "Miami":          [{ firstName: "Darian",  lastName: "Mensah",     position: "QB", stars: 0, origin: "Duke",           id: 5121169 }],
+  "Oklahoma State": [{ firstName: "Drew",    lastName: "Mestemaker", position: "QB", stars: 0, origin: "North Texas"                 }],
+  "Virginia":       [{ firstName: "Beau",    lastName: "Pribula",    position: "QB", stars: 0, origin: "Missouri",       id: 4685696 }],
+};
+
+// ESPN athlete IDs for known transfer portal players.
+// Portal API entries never include IDs, so headshots break for anyone who transferred.
+// Any player in this map gets their ID patched in during roster build.
+const PORTAL_HEADSHOT_IDS = {
+  // QBs
+  "sam leavitt":          5078810,
+  "ryan staub":           4917093,
+  "byrum brown":          4880272,
+  "aaron philo":          5132812,
+  "dj lagway":            5079555,
+  "anthony colandrea":    5044387,
+  "dylan raiola":         5079572,
+  "aidan chiles":         5075805,
+  "rocco becht":          4801299,
+  "jaylen raynor":        5080403,
+  "katin houser":         4795295,
+  "josh hoover":          4685401,
+  "dylan lonergan":       4870900,
+  "colton joseph":        5125715,
+  "ashton daniels":       4838679,
+  "darian mensah":        5121169,
+  "drew mestemaker":      5219834,
+  "beau pribula":         4685696,
+  "brendan sorsby":       4899046,
+  // OL
+  "jordan seaton":        5079682,
+  // WR
+  "cam coleman":          5079376,
+  "quintrevion wisner":   4871076,
+  // DL
+  "princewill umanmielen": 4917971,
+  // DB
+  "koi perich":           5142588,
+  "damon wilson":         4871089,
+  "damon wilson ii":      4871089,
+  // TE / other
+  "john henry daley":     5160962,
 };
 
 
@@ -1040,9 +1079,13 @@ document.getElementById("confTeamGrid").addEventListener("click", function(e) {
 document.getElementById("gamesContainer").addEventListener("click", function(e) {
   const pickBtn = e.target.closest(".pick-btn");
   if (pickBtn) {
-    submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
-               pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week),
-               parseInt(pickBtn.dataset.winProb));
+    if (pickBtn.classList.contains("picked")) {
+      removePick(parseInt(pickBtn.dataset.gameId));
+    } else {
+      submitPick(parseInt(pickBtn.dataset.gameId), pickBtn.dataset.pick,
+                 pickBtn.dataset.home, pickBtn.dataset.away, parseInt(pickBtn.dataset.week),
+                 parseInt(pickBtn.dataset.winProb));
+    }
     return;
   }
   if (e.target.closest(".pick-cta-btn")) { openUsernameModal(); return; }
@@ -1141,6 +1184,7 @@ async function fetchRoster(team) {
     const toAdd = manualIn
       .filter(e => !existing.has(`${e.firstName} ${e.lastName}`.toLowerCase().trim()))
       .map(e => ({
+        id: e.id || null,
         firstName: e.firstName, lastName: e.lastName, position: e.position,
         jersey: null, height: null, weight: null, year: null,
         homeCity: null, homeState: null,
@@ -1176,6 +1220,15 @@ async function fetchRoster(team) {
       });
     data = [...data, ...freshmen];
   }
+
+  // Patch ESPN IDs onto portal players — the portal API never includes player IDs
+  // so any transfer would show no headshot without this.
+  data = data.map(p => {
+    if (p.id) return p;
+    const key = `${p.firstName} ${p.lastName}`.toLowerCase().trim();
+    const id  = PORTAL_HEADSHOT_IDS[key];
+    return id ? { ...p, id } : p;
+  });
 
   rosterCache[team] = data;
   return data;
@@ -1379,12 +1432,46 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+function updateUserBar() {
+  const bar = document.getElementById("userBar");
+  const name = document.getElementById("userBarName");
+  if (currentUsername) {
+    bar.style.display = "flex";
+    name.innerHTML = `Logged in as <span>${currentUsername}</span>`;
+  } else {
+    bar.style.display = "none";
+  }
+}
+
 async function finishLogin(username) {
   currentUsername = username;
   localStorage.setItem("cfb_username", username);
   closeUsernameModal();
   await loadUserPicks();
+  updateUserBar();
   applyFilters();
+}
+
+function logout() {
+  currentUsername = null;
+  localStorage.removeItem("cfb_username");
+  userPicks = {};
+  userPickProbs = {};
+  updateUserBar();
+  applyFilters();
+}
+
+async function deleteAccount() {
+  if (!currentUsername) return;
+  const password = prompt(`Enter your password to confirm deleting account "${currentUsername}":`);
+  if (!password) return;
+  const hash = await sha256(password);
+  const { data } = await sb.from("accounts").select("password_hash").eq("username", currentUsername).maybeSingle();
+  if (!data || hash !== data.password_hash) { alert("Incorrect password — account not deleted."); return; }
+  await sb.from("picks").delete().eq("username", currentUsername);
+  await sb.from("accounts").delete().eq("username", currentUsername);
+  logout();
+  alert("Account deleted.");
 }
 
 async function createAccount() {
@@ -1435,6 +1522,8 @@ document.getElementById("authToggleBtn").addEventListener("click", function() {
   setAuthMode(authMode === "create" ? "login" : "create");
 });
 document.getElementById("usernameSkip").addEventListener("click", closeUsernameModal);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("deleteAccountBtn").addEventListener("click", deleteAccount);
 document.getElementById("usernameInput").addEventListener("keydown", function(e) {
   if (e.key === "Enter") document.getElementById("passwordInput").focus();
 });
@@ -1455,7 +1544,8 @@ document.getElementById("passwordInput2").addEventListener("keydown", function(e
 
 async function loadUserPicks() {
   if (!currentUsername) return;
-  const { data } = await sb.from("picks").select("game_id, picked_team, win_prob").eq("username", currentUsername);
+  const { data, error } = await sb.from("picks").select("game_id, picked_team, win_prob").eq("username", currentUsername);
+  if (error) { console.error("Failed to load picks:", error.message); return; }
   if (data) {
     userPicks = {};
     userPickProbs = {};
@@ -1471,11 +1561,22 @@ async function submitPick(gameId, pickedTeam, homeTeam, awayTeam, week, winProb)
   userPicks[gameId] = pickedTeam;
   if (winProb != null && !isNaN(winProb)) userPickProbs[gameId] = winProb;
   applyFilters();
-  await sb.from("picks").upsert({
+  const { error } = await sb.from("picks").upsert({
     username: currentUsername, game_id: gameId, picked_team: pickedTeam,
     home_team: homeTeam, away_team: awayTeam, week, season: SEASON,
     win_prob: (!isNaN(winProb) && winProb != null) ? winProb : null
   }, { onConflict: "username,game_id" });
+  if (error) console.error("Pick save failed:", error.message);
+}
+
+async function removePick(gameId) {
+  if (!currentUsername) return;
+  delete userPicks[gameId];
+  delete userPickProbs[gameId];
+  applyFilters();
+  const { error } = await sb.from("picks").delete()
+    .eq("username", currentUsername).eq("game_id", gameId);
+  if (error) console.error("Pick delete failed:", error.message);
 }
 
 
@@ -1779,16 +1880,95 @@ function switchToView(view) {
     document.querySelector(".filters"),
     document.querySelector("main"),
   ];
-  const cfpSection = document.getElementById("cfpSection");
+  const cfpSection   = document.getElementById("cfpSection");
+  const picksSection = document.getElementById("picksSection");
+
+  scheduleEls.forEach(el => { if (el) el.style.display = "none"; });
+  cfpSection.style.display   = "none";
+  picksSection.style.display = "none";
+
   if (view === "schedule") {
     scheduleEls.forEach(el => { if (el) el.style.display = ""; });
-    cfpSection.style.display = "none";
-  } else {
-    scheduleEls.forEach(el => { if (el) el.style.display = "none"; });
+  } else if (view === "playoff") {
     cfpSection.style.display = "block";
     loadCFPBracket();
+  } else if (view === "picks") {
+    picksSection.style.display = "block";
+    renderPickHistory();
   }
 }
+
+function renderPickHistory() {
+  const el = document.getElementById("picksContent");
+  if (!currentUsername) {
+    el.innerHTML = `<p class="picks-empty">Log in to see your pick history.</p>`;
+    return;
+  }
+  const picked = allGames.filter(g => userPicks[g.gameId]);
+  if (!picked.length) {
+    el.innerHTML = `<p class="picks-empty">You haven't made any picks yet.</p>`;
+    return;
+  }
+
+  // Group by week
+  const byWeek = {};
+  picked.forEach(g => {
+    if (!byWeek[g.week]) byWeek[g.week] = [];
+    byWeek[g.week].push(g);
+  });
+
+  let wins = 0, losses = 0;
+  picked.forEach(g => {
+    if (g.homePoints != null && g.awayPoints != null && g.homePoints !== g.awayPoints) {
+      const winner = g.homePoints > g.awayPoints ? g.home : g.away;
+      if (userPicks[g.gameId] === winner) wins++; else losses++;
+    }
+  });
+
+  const record = wins + losses > 0
+    ? `<span class="ph-record">${wins}–${losses}</span>`
+    : `<span class="ph-record ph-record-pending">${picked.length} picks</span>`;
+
+  let html = `<div class="ph-header"><span class="ph-title">Pick History</span>${record}</div>`;
+
+  Object.keys(byWeek).sort((a, b) => a - b).forEach(week => {
+    html += `<div class="ph-week-label">Week ${week}</div>`;
+    byWeek[week].forEach(g => {
+      const pick    = userPicks[g.gameId];
+      const prob    = userPickProbs[g.gameId];
+      const done    = g.homePoints != null && g.awayPoints != null && g.homePoints !== g.awayPoints;
+      const winner  = done ? (g.homePoints > g.awayPoints ? g.home : g.away) : null;
+      const correct = done ? pick === winner : null;
+
+      const resultBadge = done
+        ? `<span class="ph-result ${correct ? "ph-win" : "ph-loss"}">${correct ? "W" : "L"}</span>`
+        : `<span class="ph-result ph-pending">–</span>`;
+
+      const probStr = prob != null && !isNaN(prob) ? `${Math.round(prob)}%` : "";
+
+      html += `
+        <div class="ph-row">
+          <div class="ph-teams">
+            <span class="ph-team ${pick === g.away ? "ph-picked" : ""}">${g.away}</span>
+            <span class="ph-vs">@</span>
+            <span class="ph-team ${pick === g.home ? "ph-picked" : ""}">${g.home}</span>
+          </div>
+          <div class="ph-meta">
+            ${probStr ? `<span class="ph-prob">${probStr} win prob</span>` : ""}
+            ${resultBadge}
+            <button class="ph-remove" data-game-id="${g.gameId}" title="Remove pick">&times;</button>
+          </div>
+        </div>`;
+    });
+  });
+
+  el.innerHTML = html;
+}
+
+document.getElementById("picksContent").addEventListener("click", function(e) {
+  const btn = e.target.closest(".ph-remove");
+  if (btn) removePick(parseInt(btn.dataset.gameId)).then(() => renderPickHistory());
+});
 
 document.getElementById("pageTabs").addEventListener("click", function(e) {
   const tab = e.target.closest(".page-tab");
@@ -1804,7 +1984,11 @@ document.getElementById("cfpSection").addEventListener("click", function(e) {
 // ================================
 
 async function initSupabase() {
-  if (currentUsername) await loadUserPicks();
+  updateUserBar();
+  if (currentUsername) {
+    await loadUserPicks();
+    applyFilters();
+  }
 }
 
 initSupabase();
